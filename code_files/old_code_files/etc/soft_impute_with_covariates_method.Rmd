@@ -1,0 +1,292 @@
+---
+title: "Soft Impute With Covariates"
+author: "Khaled Fouda"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=TRUE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, eval = FALSE)
+library(kableExtra)
+library(magrittr)
+library(tidyverse)
+library(softImpute)
+
+knitr::opts_knit$set(root.dir="/mnt/campus/math/research/kfouda/main/HEC/Youssef/HEC_MAO_COOP/")
+#source("./Mao/SMC_functions6.R")
+```
+
+
+```{r include=TRUE, warning=FALSE, message=FALSE, eval=TRUE}
+source("./code_files/Mao_import_lib.R")
+data_dir = "./Mao/saved_data/"
+path_to_code = "./code_files/" 
+```
+
+
+References: 
+   - Spectral Regularization Algorithms for Learning Large Incomplete Matrices. Mazumder & Hastie 2010
+   
+
+Soft Impute attempts to recover a partially observed matrix without covariates while minimizing the rank. There are 3 variates of the method depending on the type of the regularization term. The first one, called SOFT-IMPUTE, uses the Nuclear Norm Regularization. Assuming the same notations as always, A is the full matrix we want to recover. Y is the noisy version of A and we partially observe Y. W is the mask where $W_{ij}=1$ if $Y_{ij}$ is observed. Consider $\Omega$ the set of observed indices in $Y$.  We also consider the complementary projection $P_{\over{\Omega}}(Y) = Y - P_{\Omega}(Y)$. Finally, the objective function is as follows:
+
+$$
+\begin{aligned}
+{minimize}_{B} && \frac{1}{2} \|Y-B\|^2_F + \lambda\|B\|_* && (8)
+\end{aligned}
+$$
+which has the following solution
+
+$$
+\begin{aligned}
+\hat{B} = S_\lambda(Y) = UD_\lambda V' && with&& D_\lambda = diag[(d_1-\lambda)_+(d_2-\lambda)_+\cdots(d_r-\lambda)_+] && (9)
+\end{aligned}
+$$
+Using the SVD of $Y=UD V'$. The rank of $Y$ is assumed to be $r$. The notation $S_\lambda(Y)$ refers to soft-thresholding. 
+
+Equation (8) is equivalent to 
+
+
+$$
+\begin{aligned}
+&&{minimize}_{B} && \frac{1}{2} \|P_{{\Omega}}(Y)-P_{{\Omega}}(B)\|^2_F + \lambda\|B\|_* && (10)\\
+= &&{minimize}_{B} && \frac{1}{2} \|P_{{\Omega}}(Y)+P_{\over{\Omega}}(B)-B\|^2_F + \lambda\|B\|_* && 
+\end{aligned}
+$$
+
+***********
+**Algorithm 1** SOFT-IMPUTE
+
+1. **Initialize** $B^{old} = 0$.
+2. **Do for** $\lambda_1 > \lambda_2 > \ldots > \lambda_k$:
+
+    a. **Repeat**:
+    
+        i. **Compute** $B^{new} \leftarrow S_{\lambda_k}(P_{\Omega}(Y) + P^{\perp}_{\Omega}(B^{old}))$.
+        
+        ii. **If** $\frac{\|B^{new} - B^{old}\|_F}{\|B^{old}\|_F} < \epsilon$ **exit**.
+        
+        iii. **Assign** $B^{old} \leftarrow B^{new}$.
+    
+    b. **Assign** $B_{\lambda_k} \leftarrow B^{new}$.
+
+3. **Output** the sequence of solutions $\hat{B}_{\lambda_1}, \ldots, \hat{B}_{\lambda_k}$.
+
+************************
+
+In terms of computations, the update inside the loop is as follows:
+
+
+1. Initialization $Y^* = Y, svd = svd(Y^*), J=\cdots$.
+2. **Do for** $\lambda_1 > \lambda_2 > \ldots > \lambda_k$:
+
+    a. **Repeat**:
+         
+        i. svd.old = svd
+        
+        ii. $\hat{Y} = S_{\lambda_k}(P_{\Omega}(Y) + P^{\perp}_{\Omega}(B^{old})) = U[,:J](D[,:J]-\lambda)V[,:J]'$
+        
+        iii. $Y^*[\overline{\Omega}] = \hat{Y}[\overline{\Omega}]$
+        
+        iv. svd = svd($Y^*$)
+        
+    
+    b. **Assign** $B_{\lambda_k} \leftarrow Y^*$.
+
+3. **Output** the sequence of solutions $\hat{B}_{\lambda_1}, \ldots, \hat{B}_{\lambda_k}$.
+
+***********************************
+
+## Connection to Mao's Model
+
+Consider a Mao's model with $\alpha=1$ and $\lambda_2=0$. Moreover, let $Y=W*\theta*Y$ The loss functions is as follows:
+
+
+$$
+J = \| Y - X'\beta - B\|^2_F + \lambda_2 \|B\|_*
+$$
+Now let $Y^{adj}=Y-X'\beta$ and $\lambda = \lambda_2$. Then our resulting model is
+
+
+$$
+J = \| Y^{adj} - B\|^2_F + \lambda \|B\|_*,
+$$
+which is equivalent to the soft-impute model in equation (8).
+
+Moreover, the solution to Mao (equations 8 and 11 in Mao's paper) can be rewriting as
+
+$$
+\begin{aligned}
+\hat \beta &= (X^TX)^{-1}X^TY \\
+\hat B &= S_{n_1n_2\lambda}(P^{\perp}_{X} Y)
+\end{aligned}
+$$
+
+*********
+
+## Adding Covariates to Soft Impute
+
+An adjustment to Algorithm 1 can be made to incorporate $Y^{adj}=Y-X'\hat\beta$ in the model as follows:
+
+
+
+***********
+**Algorithm 1.A** SOFT-IMPUTE WITH COVARIATES
+
+1. **Initialize** $B^{old} = 0$.
+2. **Do for** $\lambda_1 > \lambda_2 > \ldots > \lambda_k$:
+
+    a. **Repeat**:
+    
+        i. **Compute** $B^{new} \leftarrow S_{\lambda_k}(P_{\Omega}(Y) + P^{\perp}_{\Omega}(B^{old}) -  P_{Y}(X) )$.
+        
+        ii. **If** $\frac{\|B^{new} - B^{old}\|_F}{\|B^{old}\|_F} < \epsilon$ **exit**.
+        
+        iii. **Assign** $B^{old} \leftarrow B^{new}$.
+    
+    b. **Assign** $B_{\lambda_k} \leftarrow B^{new}$.
+
+3. **Output** the sequence of solutions $\hat{B}_{\lambda_1}, \ldots, \hat{B}_{\lambda_k}$.
+
+************************
+
+In terms of computations, the update inside the loop is as follows:
+
+
+1. Initialization:
+
+    a. $Y^* = Y$
+    
+    
+    b. $\hat\beta=(X'X)^{-1}X'Y^*$
+    
+    c. $Y^{adj} = Y^* - X'\hat\beta$
+    
+    d. $svd = svd(Y^{adj})$ 
+    
+    e. $J=\cdots$.
+    
+2. **Do for** $\lambda_1 > \lambda_2 > \ldots > \lambda_k$:
+
+    a. **Repeat**:
+         
+        i. svd.old = svd
+        
+        ii. $\hat{Y} = U[,:J](D[,:J]-\lambda)V[,:J]'$
+        
+        iii. $Y^*[\overline{\Omega}] = \hat{Y}[\overline{\Omega}] + X^T\hat\beta[\overline{\Omega}]$ 
+        
+        iv. $\hat\beta=(X'X)^{-1}X'Y^*$
+        
+        v. $Y^{adj} = Y^* - X'\hat\beta$
+        
+        vi. svd = svd($Y^{adj}$)
+        
+    
+    b. **Assign** $\hat{B}_{\lambda_k} \leftarrow \hat Y$, $\hat{A}_{\lambda_k} \leftarrow X'\hat\beta_{\lambda_k} \hat{B}_{\lambda_k}$.
+
+3. **Output** the best solution $\hat{B}_{\lambda^*}, \hat{\beta}_{\lambda^*}, \hat{A}_{\lambda^*}$.
+
+***********************************
+
+Below is the implementation of algorithm **1.A** based on the author's github page.
+
+```{r code=readLines(paste0(path_to_code, "SoftImpute_fit_covariates.R"))}
+
+```
+
+An example of using this function and to show the steps to convergence is below. $\lambda$ was chosen to be 30 and $J$, the maximum rank of $B$ to be retained is chosen to be 10.
+
+```{r convergence_test, eval=TRUE}
+# generate simulation data
+gen.dat <- generate_simulation_data_ysf(2,600,600,10,10, missing_prob = 0.9,coll=FALSE)
+gen.dat$Y[gen.dat$W==0] = NA
+# apply the original soft impute from the softImpute package by the authors (does not employ covariates)
+sout <- softImpute(gen.dat$Y, lambda=30, rank.max=10, trace.it = TRUE, thresh=1e-3)
+
+# apply the adjusted soft impute that incorporates the covariates
+sout <- simpute.svd.cov(gen.dat$Y, gen.dat$X, thresh=1e-3, lambda = 30, J=10, trace.it = TRUE)
+```
+
+
+**********************************
+
+## Choosing $\lambda$ and $J$
+
+The hyperparameter $\lambda$ of the nuclear term regularization and $J$, the maximum number of Eigen values (max rank) to retain are picked through cross validation. We start by splitting the training data set into training and validations set using a new mask $W^{v}$, where $W^{v}_{ij}=0$ if $Y_{ij}\in Y_{valid}$ and $W^{v}_{ij}=1$ if $Y_{ij} \notin Y_{valid}$. The function for generating the new mask is illustrated below. We chose the proportion of validation cells to be $20\%$ of the non-missing part of the data.
+
+```{r code=readLines(paste0(path_to_code, "matrix_split_train_valid.R"))}
+
+```
+
+We followed the steps illustrated in the toy example in the author's [vignette](https://stat.ethz.ch/~maechler/adv_topics_compstat/softImpute_MM.html) to choose to the optimal $\lambda$ and $J$. 
+
+The algorithm selects a range for $lambda$ as [$\lambda_0,\cdots,1$] where $\lambda_0$ is the first Eigen value of an initial SVD decomposition. The function  $lambda0.cov()$ below computes this value for the case with covariates and the SoftImpute function $lambda0()$ computes it for the original model. We also select an initial $J$ that should not be very large (I choose $J=10$ as it was sufficient for our simulation studies). 
+
+We iterate over every value of $\lambda_i$ going from largest to smallest and choose the values that perform best for the validation set. At each iteration, a new $J$ is chosen for the following iteration as follows $J^{new} = min(\|\hat B\|_0+2, L)$ where $L$ is chosen to be the limit ($L=30$ in our simulation). For example, if we sent $J=5$ at the current iteration but the number of nonzero Eigenvalues came out to be only $4$ then the rank for the next iteration is $min(4+2,L)$.
+
+
+## Warm start
+
+Instead of initializing the missing values to 0 at the beigining of every fit, the authors argued that initializing the missing values to the estimated values from the previous fit leads to a faster convergence. This is shown to be true. In our case, the first fit is typically slow and takes long to converge, however, starting from the second fit, the process is faster and the number of iterations till convergence are lower. 
+
+Below we show two cross validation functions. One uses Algorithm **1** and the other uses the new Algorithm **1.A**.
+
+
+```{r code=readLines(paste0(path_to_code, "SoftImpute_cv_covariates.R"))}
+
+```
+
+
+We now show an example of using both of these functions on the same simulation as before. Moreover, we report the test error and the ranks on the test dataset (the original test dataset that is **not** used for training and wasn't provided to the model.)
+
+```{r eval=TRUE}
+# the true rank of A, B, Beta
+cat(sprintf("rank of A=%d, B=%d, beta=%d",qr(gen.dat$A)$rank,qr(gen.dat$B)$rank,qr(gen.dat$beta)$rank))
+
+# we create the new mask with 20% validation - 80% training  (ie, 90% test, 8% training, 2% validation)
+W_valid <- matrix.split.train.test(gen.dat$W, testp=0.2)
+
+# fiting Alogirthm 1
+sout <- simpute.orig(gen.dat$Y*W_valid, W_valid, gen.dat$Y, trace=TRUE, rank.limit = 30)
+# Test error
+test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0])
+
+
+# rank of A 
+qr(sout$A_hat)$rank
+
+# fitting Algorithm 1.A
+sout1 <- simpute.svd.cov.cv(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y, trace=TRUE, rank.limit = 30)
+# test error
+test_error(sout1$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0])
+# error on beta estimates
+test_error(sout1$beta_hat, gen.dat$beta)
+# error on B estimates
+test_error(sout1$B_hat, gen.dat$B)
+# rank of A, B, and beta
+cat(sprintf("rank of A=%d, B=%d, beta=%d",qr(sout1$A_hat)$rank,qr(sout1$B_hat)$rank,qr(sout1$beta_hat)$rank))
+
+```
+
+
+
+```{Rcpp}
+subroutine suv (nrow,ncol,nrank,u,v,irow,jcol,nomega,r)
+      integer nrow, ncol, nrank,nomega, irow(nomega),jcol(nomega)
+      double precision u(nrow,nrank),v(ncol,nrank),r(nomega)
+c      double precision rtemp
+c      computes uv'[i,j]=<u[i,],v[j,]>
+      integer ii,jj
+!HPF$ INDEPENDENT
+      do 10 i=1,nomega
+         ii=irow(i)
+         jj=jcol(i)
+      r(i) = DOT_PRODUCT(u(ii,:), v(jj,:))
+c          r(i)=rtemp
+10    continue
+      return
+      end
+
