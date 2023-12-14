@@ -85,19 +85,32 @@ simpute.als.cov <-
       V.old=V
       Dsq.old=Dsq
       #-------------------------------------------------------
-      # Estimate new B
+      # Need:  Sp, Dsq, U, BD
+      # Estimate new BD
       # this is the part P = solve( D%*%D + lambda I) %*% D %*% D
       # but since D will always be diagonal, the following is faster
-      P = diag( 1 / (diag(Dsq.old) + lambda))
+      P = diag( 1 / (Dsq + lambda))
       # We will actually estimate BD instead of B because 
       #   1. We will always need B^2 not B and 2. we need BD not B
       BD = t(P %*% t(U) %*% Sp + P %*% t(BD))
       # Now we do SVD decomposition to compute new V, and D values
       svd.BD = svd(BD)
-      V = svd.bd$U
-      BD = V %*% svd.BD$d 
+      V = svd.BD$U
+      Dsq <- diag(svd.BD$d)
+      BD = V %*% diag(sqrt(svd.BD$d)) # shouldn't it be sqrt??
       #---------------------------------------------------------
       # Estimate new AD
+      # need: Sp, V, Dsq, AD
+      P = diag( 1 / (Dsq + lambda)) # note P is a diagonal
+      AD = Sp %*% V %*% P + AD %*% P
+      svd.AD = svd(AD)
+      U = svd.AD$U
+      Dsq <- diag(svd.AD$d)
+      AD <- U %*% diag(sqrt(svd.AD$d))
+      #-----------------------------------------------------
+      # next we estimate  Sp =  Y - AB for non-missing only!!! like initialize at Y and keep updating.
+      Sp[!ynas] = Y[!ynas] - (U %*% Dsq %*% t(V))[!ynas]
+      
       #-------------------------------------------------------
       ## U step
       B=t(U)%*%yplus
