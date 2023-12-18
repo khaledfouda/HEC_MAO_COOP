@@ -1,0 +1,263 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{algorithm2e}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Alternating Minimization Allgorithms (ALS) and other alternatives},
+  pdfauthor={Khaled Fouda},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Alternating Minimization Allgorithms (ALS) and other
+alternatives}
+\author{Khaled Fouda}
+\date{2023-12-18}
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{knitr}\SpecialCharTok{::}\NormalTok{opts\_chunk}\SpecialCharTok{$}\FunctionTok{set}\NormalTok{(}\AttributeTok{echo =}\NormalTok{ F, }\AttributeTok{cache =} \ConstantTok{FALSE}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(kableExtra)}
+\FunctionTok{library}\NormalTok{(magrittr)}
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\NormalTok{knitr}\SpecialCharTok{::}\NormalTok{opts\_knit}\SpecialCharTok{$}\FunctionTok{set}\NormalTok{(}\AttributeTok{root.dir=}\StringTok{"/mnt/campus/math/research/kfouda/main/HEC/Youssef/HEC\_MAO\_COOP/"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{references}{%
+\subsection{References:}\label{references}}
+
+{[}1{]} Hastie (2015) Matrix Completion and Low-Rank SVD via Fast
+Alternating Least Squares {[}2{]}
+
+Building on our model in the document ``Soft Impute With Covariates'',
+we explore alternative ways of computing the low-rank matrix ``B'' while
+achieving the same results. The alternative ways are much faster that
+they outperform Mao's model.
+
+We begin by introducing the ALS algorithm for estimating B, first
+without covariates:
+
+Consider our usual model (model 8 in Soft Impute With Covariates):
+
+\[
+\begin{aligned}
+minimize_B && \frac{1}{2} \|Y-B\|^2_F + \lambda ||B||_*
+\end{aligned}
+\] which as the following soluion
+
+\[
+\begin{aligned}
+\hat{B} = S_\lambda(Y) = U D_\lambda V'&& with && D_\lambda = diag[(d_1-\lambda)_+\cdots(d_r-\lambda)_+]
+\end{aligned}
+\] where \(r\) acts as an upper bound to the rank of \(\hat{B}\). Since
+we don't require the full SVD decomposition to compute \(\hat{B}\) and
+we only need the rows/columns upto \(r\), the authors have discussed the
+possibility of using alternative methods to do partial svd
+decomposition. Specifically, they discussed the use of the algorithm
+``PROPACK'' which is an state-of-the-art method of computing SVD
+decomposition upto certain number of Eigen Values. However, they didn't
+do it in their implementation and they used full SVD decomposition
+instead.
+
+A second trick they proposed to avoid the high computations is that they
+rewrote \(\hat{Y}\) as
+
+\[
+\begin{aligned}
+\hat{Y} = [P_\Omega(Y) - P_\Omega(\hat{B})]  + \hat{B}
+\end{aligned}
+\]
+
+\(\hat{Y}\) ubove refers to the filled matrix where observed values are
+left as they are and missing values are filled from \(\hat{B}\). The
+first term above is a very sparse matrix since the missing values are
+left as 0. The second term is not sparse but is low-rank. Using the two
+terms instead of \(\hat{Y}\) should improve the speed of matrix
+operations. Again, they proposed it but didn't use it. I attempt to use
+it but it provided no significant improvement over using \(\hat{Y}\) as
+is. Maybe this will be different for extremely large matrices as I
+tested with dimensions up-to \(1000\times 1000\).
+
+Hastie et al., and based on the approach by Rennie and Srebero (2005),
+they considered the following model instead
+
+\[
+\begin{aligned}
+minimize_{A,C} && \frac{1}{2} \|Y-AC^T\|^2_F + \frac{\lambda}{2} (||A||^2_F+||C||^2_F)  && (6)
+\end{aligned}
+\] Where \(A\) is \(n_1\times r\) and \(C\) is \(n_2 \times r\) and
+\(B=AC^T\). The loss above is called maximum-margin matrix factorization
+(MMMF) which is not convex in A and C, but is bi-convex -- for fixed C,
+the loss is convex in A and vice-versa. If the solution to our problem
+has a rank \(q \le r\) then the solution to this problem is
+
+\[
+\begin{aligned}
+\hat{A} &= U_r S_\lambda(D_r)^{\frac{1}{2}} && (7)\\
+\hat{C} &= V_r S_\lambda(D_r)^{\frac{1}{2}}, &&
+\end{aligned}
+\]
+
+This method could still make use of the sparse + low-rank property.
+
+Lemma 1 of theorem 2 states the following:
+
+\[
+\| B\|_* = min_{A,C:B=AC'} \frac{1}{2}(\|A\|^2_F+\|C\|^2_F)
+\]
+
+Suppose we have current estimates of \(A\) and \(C\) and we wish to
+compute the new \(\tilde{C}\). We will use a filled \(Y^*\) using the
+estimates from the previous iterations and
+
+\[
+\begin{aligned}
+minimize_{C} && \frac{1}{2} \|Y^*-A\tilde C^T\|^2_F + \lambda ||\tilde C||^2_F.
+\end{aligned}
+\] With \$Y\^{}* = P\_\{\Omega\}(Y) + P\_\{\overline \Omega\}(AC') =
+(P\_\{\Omega\}(Y) + P\_\{\Omega\}(AC')) + AC' \$
+
+Which is again, a sparse + low-rank.
+
+\begin{algorithm}[H]
+\SetAlgoLined
+\KwResult{Rank-Restricted Efficient Maximum-Margin Matrix Factorization: softImpute-ALS}
+ Initialize $A = U D$ where $U_{m \times r}$ is a randomly chosen matrix with orthonormal columns and $D = I_r$, the $r \times r$ identity matrix, and $B = V D$ with $V = 0$. Alternatively, any prior solution $A = UD$ and $B = VD$ could be used as a warm start. \\
+ Given $A = UD$ and $B = VD$, approximately solve 
+ $\minimize_B \frac{1}{2} \norm{P_{\Omega}(X) - A B^T}_F^2 + \frac{\lambda}{2} \norm{B}_F^2$
+ to update $B$. We achieve that with the following steps:\\
+ \Indp
+ (a) Let $X^* = (P_{\Omega}(X) - P_{\Omega}(AB^T)) + AB^T$, stored as sparse plus low-rank. \\
+ (b) Solve $\minimize_B \frac{1}{2} \norm{X^* - AB^T}_F^2 + \frac{\lambda}{2} \norm{B}_F^2$ with solution \\
+ $B^T = (D^2 + \lambda I)^{-1} D U^T X^*$ \\
+ \qquad $= (D^2 + \lambda I)^{-1} D U^T (P_{\Omega}(X) - P_{\Omega}(AB^T))$ \\
+ \qquad $+ (D^2 + \lambda I)^{-1} D^2 B^T$. \\
+ (c) Use this solution for $\bar{B}$ and update $V$ and $D$: \\
+ \qquad i. Compute the SVD decomposition $\bar{B}D = \tilde{U} \tilde{D} \tilde{V}^T$; \\
+ \qquad ii. $V \leftarrow \tilde{U}$, and $D \leftarrow \tilde{D}$. \\
+ \Indm
+ Given $B = VD$, solve for $A$. By symmetry, this is equivalent to step 2, with $X^T$ replacing $X$, and $B$ and $A$ interchanged. \\
+ Repeat steps (2)-(3) until convergence. \\
+ Compute $M = X^* V$, and then it's SVD: $M = U_{\sigma} D_{\sigma} R^T$. Then output $U, V \leftarrow V R$ and $D_{\lambda} = \text{diag}(\sigma_1 - \lambda, ..., \sigma_r - \lambda)_+$.
+ \caption{Rank-Restricted Efficient Maximum-Margin Matrix Factorization: softImpute-ALS}
+\end{algorithm}
+
+\[
+\begin{aligned}
+\end{aligned}
+\]
+
+\end{document}
