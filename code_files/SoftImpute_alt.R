@@ -1,7 +1,7 @@
 
 source("./code_files/Mao_import_lib.R")
 library(softImpute)
-dim = c(600)
+dim = c(1000)
 missingness = 0.9
 i=1
 coll=TRUE
@@ -13,10 +13,12 @@ if(missingness == 0){
 
 W_valid <- matrix.split.train.test(gen.dat$W, testp=0.2)
 Y_train = (gen.dat$Y * W_valid) 
-Y_train[Y_train==0] = NA
+#Y_train[Y_train==0] = NA
+beta_partial = solve(t(gen.dat$X) %*% gen.dat$X) %*% t(gen.dat$X)
 
 start_time <- Sys.time()
-sout1 <- simpute.als.cov(Y_train, gen.dat$X, 3, 1e-3, 30,trace.it = FALSE)
+sout1 <- simpute.als.cov(Y_train, gen.dat$X, beta_partial, 15, 1e-3, 30,trace.it = TRUE)
+sout2 <- simpute.als.cov.v2(Y_train, gen.dat$X, beta_partial, 15, 1e-3, 30,trace.it = TRUE)
 sout1 <- simpute.als.cov(Y_train, gen.dat$X, 3, 1e-3, 30,trace.it = FALSE)
 sout1 <- simpute.als.cov(Y_train, gen.dat$X, 3, 1e-3, 30,trace.it = FALSE)
 round(as.numeric(difftime(Sys.time(), start_time,units = "secs")))

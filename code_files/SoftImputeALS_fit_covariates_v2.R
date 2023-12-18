@@ -21,7 +21,7 @@ clean.warm.start=function(a){
    else NULL
 }
 
-simpute.als.cov <-
+simpute.als.cov.v2 <-
    function (Y, X, beta_partial, J = 2, thresh = 1e-05,lambda=0,maxit=100,trace.it=FALSE,warm.start=NULL){
    
    # are you scaling???
@@ -29,14 +29,16 @@ simpute.als.cov <-
    n1 <- dim(Y)[1]
    n2 <- dim(Y)[2]
    m1 <- dim(X)[2]
-   ynas <- Y == 0
-   #ynas <- is.na(Y)
-   nz=n1*n2-sum(ynas)
+   ymiss <- Y == 0
+   yobs <- ! ymiss
+   
+   nz=n1*n2-sum(ymiss)
    
    # The following two lines are as shown in (c) and (d)
-   yfill <- Y #as(Y, "sparseMatrix")
-   #yfill[ynas] <- 0
+   #yfill <- Y #as(Y, "sparseMatrix")
+   #yfill[ymiss] <- 0
    
+   Sp <- Y
    
    if(!is.null(warm.start)){
       ###must have u,d and v components
@@ -62,7 +64,7 @@ simpute.als.cov <-
          U=cbind(U,Ua)
          V=cbind(warm.start$v,matrix(0,n2,Ja))
       }
-      yfill[ynas]=(U%*%(Dsq*t(V)))[ynas] + Xbeta[ynas]  
+      yfill[ymiss]=(U%*%(Dsq*t(V)))[ymiss] #+ Xbeta[ymiss]  
    }
    else
    {
@@ -70,12 +72,22 @@ simpute.als.cov <-
       U=matrix(rnorm(n1*J),n1,J)
       U=svd(U)$u
       Dsq=rep(1,J)# we call it Dsq because A=UD and B=VD and AB'=U Dsq V^T
-      yfill[ynas]=0
+      #yfill[ymiss]=0
    }
-      
+   BD = V * Dsq
+   AD <- U * Dsq
+   
+   AB = (U * Dsq) %*% t(V)
+   
+   yfill <- Y
    beta.estim <- beta_partial %*% yfill
    Xbeta <- X %*% beta.estim
-   yplus <- yfill - Xbeta 
+   Sp[yobs] = Y[yobs] - AB[yobs] - Xbeta[yobs]
+   #beta.estim <- beta_partial %*% yfill
+   #Xbeta <- X %*% beta.estim
+   #yplus <- yfill #- Xbeta 
+   #Sp[yobs] = Y[yobs] - AB[yobs] #- Xbeta[yobs]
+    #  X.star = Sp + AB
    ratio <- 1
    iter <- 0
    while ((ratio > thresh)&(iter<maxit)) {
@@ -89,72 +101,117 @@ simpute.als.cov <-
       # Estimate new BD
       # this is the part P = solve( D%*%D + lambda I) %*% D %*% D
       # but since D will always be diagonal, the following is faster
-      P = diag( 1 / (Dsq + lambda))
+      # We also keeep Dsq as a vector for optimization
       # We will actually estimate BD instead of B because 
       #   1. We will always need B^2 not B and 2. we need BD not B
-      BD = t(P %*% t(U) %*% Sp + P %*% t(BD))
+      #BD = t(P %*% t(U) %*% Sp + P %*% t(BD))
+      #this one matches theirs for some reason
+      #BD = t((t(U)%*%X.star)*P)
+      #BD = t((t(U)%*%Sp)*P + t(U) %*% U %*% t(BD)*P)
+      #BD = t(Sp) %*% U %*% P + BD %*% P
+      P = ( Dsq / (Dsq + lambda))
+      BD = t((t(U)%*%Sp)*P + (  t(V) * (Dsq *P)) + (t(U)%*% Xbeta)*P )  
       # Now we do SVD decomposition to compute new V, and D values
       svd.BD = svd(BD)
-      V = svd.BD$U
-      Dsq <- diag(svd.BD$d)
-      BD = V %*% diag(sqrt(svd.BD$d)) # shouldn't it be sqrt??
-      #---------------------------------------------------------
+      V = svd.BD$u
+      Dsq <- svd.BD$d
+      BD = V * Dsq 
+      U = U %*% svd.BD$v
+      #------------------------------------------------------------
+      # Update Sp 
+      AB = (U) %*% (Dsq * t(V)) 
+      #-----------------------------------------------
+      # Estimate Beta and update Sp
+      yfill[ymiss] <- AB[ymiss] + Xbeta[ymiss]
+      beta.estim <- beta_partial %*% yfill
+      Xbeta <- X %*% beta.estim
+      Sp[yobs] = Y[yobs] - AB[yobs] - Xbeta[yobs]
+      #X.star = Sp + AB
+      #-------------------------------------------------------------
       # Estimate new AD
       # need: Sp, V, Dsq, AD
-      P = diag( 1 / (Dsq + lambda)) # note P is a diagonal
-      AD = Sp %*% V %*% P + AD %*% P
+      P = ( Dsq / (Dsq + lambda)) # note P is a diagonal
+      #AD = t(P %*% t(V) %*% t(Sp) + P %*% t(AD))
+      # again same as what the did
+      #AD = t((t(V) %*% t(X.star)) * P  )
+      AD = t( (t(V) %*% t(Sp)) * P + (t(U) * (Dsq*P))  + (t(V)%*% t(Xbeta))*P ) 
+      #AD = Sp %*% V %*% P + AD %*% P
       svd.AD = svd(AD)
-      U = svd.AD$U
-      Dsq <- diag(svd.AD$d)
-      AD <- U %*% diag(sqrt(svd.AD$d))
+      U = svd.AD$u
+      Dsq <- svd.AD$d
+      AD <- U * Dsq
+      V <- V %*% svd.AD$v
       #-----------------------------------------------------
       # next we estimate  Sp =  Y - AB for non-missing only!!! like initialize at Y and keep updating.
-      Sp[!ynas] = Y[!ynas] - (U %*% Dsq %*% t(V))[!ynas]
+      # these are the estimates A %*% t(B)
+      AB = (U) %*% (Dsq * t(V))
+      # Estimate Beta and update Sp
+      yfill[ymiss] <- AB[ymiss] + Xbeta[ymiss]
+      beta.estim <- beta_partial %*% yfill
+      Xbeta <- X %*% beta.estim
+      Sp[yobs] = Y[yobs] - AB[yobs] - Xbeta[yobs]
+      
+      #X.star = Sp + AB
+      #------------------------------------------
+      # Estimating Covariate effects
+      #yfill[ymiss] = AB[ymiss] #+ Xbeta[ymiss]
+      #beta.estim <- beta_partial %*% yfill
+      #Xbeta <- X %*% beta.estim
       
       #-------------------------------------------------------
-      ## U step
-      B=t(U)%*%yplus
-      if(lambda>0)B=B*(Dsq/(Dsq+lambda))
-      Bsvd=svd(t(B))
-      V=Bsvd$u
-      Dsq=(Bsvd$d)
-      U=U%*%Bsvd$v
-      yhat=U %*%(Dsq*t(V)) # yhat = AB - Xbeta
-      yfill[ynas]=yhat[ynas] + Xbeta[ynas]
-      # new beta estimates
-      beta.estim <- beta_partial %*% yfill
-      Xbeta <- X %*% beta.estim
-      yplus <- yfill - Xbeta # updated_Y - Xbeta
       ###The next line we could have done later; this is to match with sparse version
-      if(trace.it) obj=(.5*sum( (yplus-yhat)[!ynas]^2)+lambda*sum(Dsq))/nz
-      ## V step
-      A=t(yplus%*%V)
-      if(lambda>0)A=A*(Dsq/(Dsq+lambda))
-      Asvd=svd(t(A))
-      U=Asvd$u
-      Dsq=Asvd$d
-      V=V %*% Asvd$v
-      yhat=U %*%(Dsq*t(V)) # yhat = AB - Xbeta
-      yfill[ynas]=yhat[ynas] + Xbeta[ynas]
-      # new beta estimates
-      beta.estim <- beta_partial %*% yfill
-      Xbeta <- X %*% beta.estim
-      yplus <- yfill - Xbeta # yplus = updated_Y (yfill) - Xbeta
+      if(trace.it) obj=(.5*sum( Sp[yobs]^2)+lambda*sum(Dsq))/nz
+      #---------------------------------------------------------
       ratio=Frob(U.old,Dsq.old,V.old,U,Dsq,V)
       if(trace.it) cat(iter, ":", "obj",format(round(obj,5)),"ratio", ratio, "\n")
+      #---------------------------------------------------------
+      ## U step
+      # B=t(U)%*%yplus
+      # if(lambda>0)B=B*(Dsq/(Dsq+lambda))
+      # Bsvd=svd(t(B))
+      # V=Bsvd$u
+      # Dsq=(Bsvd$d)
+      # U=U%*%Bsvd$v
+      # yhat=U %*%(Dsq*t(V)) # yhat = AB - Xbeta
+      # yfill[ymiss]=yhat[ymiss] + Xbeta[ymiss]
+      # # new beta estimates
+      # beta.estim <- beta_partial %*% yfill
+      # Xbeta <- X %*% beta.estim
+      # yplus <- yfill - Xbeta # updated_Y - Xbeta
+      # ###The next line we could have done later; this is to match with sparse version
+      # if(trace.it) obj=(.5*sum( (yplus-yhat)[!ymiss]^2)+lambda*sum(Dsq))/nz
+      # ## V step
+      # A=t(yplus%*%V)
+      # if(lambda>0)A=A*(Dsq/(Dsq+lambda))
+      # Asvd=svd(t(A))
+      # U=Asvd$u
+      # Dsq=Asvd$d
+      # V=V %*% Asvd$v
+      # yhat=U %*%(Dsq*t(V)) # yhat = AB - Xbeta
+      # yfill[ymiss]=yhat[ymiss] + Xbeta[ymiss]
+      # # new beta estimates
+      # beta.estim <- beta_partial %*% yfill
+      # Xbeta <- X %*% beta.estim
+      # yplus <- yfill - Xbeta # yplus = updated_Y (yfill) - Xbeta
+      # ratio=Frob(U.old,Dsq.old,V.old,U,Dsq,V)
+      # if(trace.it) cat(iter, ":", "obj",format(round(obj,5)),"ratio", ratio, "\n")
       ##########################################################
    }
    if(iter==maxit) warning(paste("Convergence not achieved by",maxit,"iterations"))
    
-   U=yplus%*%V
+   #U=yplus%*%V
    sU=svd(U)
    U=sU$u
    Dsq=sU$d
    V=V%*%sU$v
    Dsq=pmax(Dsq-lambda,0)
    if(trace.it){
-      yhat=U %*%(Dsq*t(V))
-      obj=(.5*sum( (yplus-yhat)[!ynas]^2)+lambda*sum(Dsq))/nz
+      AB=U %*%(Dsq*t(V))
+      #yfill[ymiss] = AB[ymiss] + Xbeta[ymiss]
+      beta.estim <- 0#beta_partial %*% yfill
+      #Xbeta <- X %*% beta.estim
+      Sp = Y - AB #- Xbeta
+      obj=(.5*sum( Sp[yobs]^2)+lambda*sum(Dsq))/nz
       cat("final SVD:", "obj",format(round(obj,5)),"\n")
    }
    J=min(sum(Dsq>0)+1,J)
@@ -162,8 +219,8 @@ simpute.als.cov <-
    out
 }
 ######################
-
-
+system.time({sout2 <- simpute.als.cov.v2(Y_train, gen.dat$X, beta_partial, 15, 1e-3, 30,trace.it = TRUE)})
+system.time({sout1 <- simpute.als.cov(Y_train, gen.dat$X, beta_partial, 15, 1e-3, 30,trace.it = TRUE)})
 
 # 
 # set.seed(101)

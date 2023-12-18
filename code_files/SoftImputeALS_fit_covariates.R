@@ -87,6 +87,7 @@ simpute.als.cov <-
       ## U step
       B=t(U)%*%yplus
       if(lambda>0)B=B*(Dsq/(Dsq+lambda))
+      #print(yfill)
       Bsvd=svd(t(B))
       V=Bsvd$u
       Dsq=(Bsvd$d)
