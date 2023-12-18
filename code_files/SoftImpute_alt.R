@@ -18,9 +18,13 @@ beta_partial = solve(t(gen.dat$X) %*% gen.dat$X + 35) %*% t(gen.dat$X)
 
 sout1 <- simpute.als.cov(Y_train, gen.dat$X, beta_partial, 15, 1e-3, 30,trace.it = TRUE,warm.start = sout1)
 
-start_time <- Sys.time()
 sout1 <- simpute.cov.cv(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y[W_valid==0], 
-                        trace=TRUE, rank.limit = 30, lambda1=15,n1n2 = 1, warm=sout1$last.fit)
+                        trace=TRUE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=sout1$last.fit)
+
+start_time <- Sys.time()
+sout2 <- simpute.cov.cv.L2(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y[W_valid==0], 
+                        trace=TRUE, rank.limit = 30, lambda1=0,lambda1.grid = seq(0,20,length=10) ,n1n2 = 1, warm=sout1$last.fit)
+
 round(as.numeric(difftime(Sys.time(), start_time,units = "secs")))
 
 test_error(sout1$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0])
