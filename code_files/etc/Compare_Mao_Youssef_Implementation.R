@@ -98,9 +98,11 @@ compare_and_save <- function(missingness,coll=TRUE,
       # Soft Impute with Covariates and With L2 regularization on the covariates
       set.seed(2023)
       start_time = Sys.time()
-      #sout <- softImputeALS_L2(Y_train, Y_valid, W_valid, gen.dat$X,no_cores = 3, max_cores = 3)
-      sout <- simpute.cov.cv.L2(Y_train, gen.dat$X, W_valid, Y_valid, trace=FALSE, rank.limit=30, rank.init = 5,
-                                print.best=FALSE, rank.step=4, type="als", lambda1.grid=seq(20,0,length.out=20))
+      sout <- simpute.cov.cv(Y_train, gen.dat$X, W_valid, Y_valid, trace=FALSE, rank.limit = 30, 
+                             print.best=FALSE, rank.step=4, type="als", lambda1=0)
+      sout <- simpute.cov.cv.lambda1(Y_train, gen.dat$X, W_valid, Y_valid, sout$lambda, sout$rank.max, print.best = FALSE,
+                                    trace=FALSE, lambda1.grid = seq(0,20,length.out=20) ,n1n2 = 1, warm=NULL)
+      
       results$simputeL2.time[i] =round(as.numeric(difftime(Sys.time(), start_time,units = "secs")))
       results$simputeL2.lambda.1[i] = sout$lambda1
       results$simputeL2.lambda.2[i] = sout$lambda2

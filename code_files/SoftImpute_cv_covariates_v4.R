@@ -44,15 +44,17 @@ simpute.cov.cv.L2 <- function(Y, X, W, Y.valid, lambda.factor=1/4, lambda.init=N
    best_overall_J = NA
    best_overall_lambda1.index = NA
    best_overall_fit = NULL
+   rank_maxes = rep(rank.init, length(lambda1.grid))
    
    
    for(i in seq(along=lamseq)) {
       #print('hi')
-      fiti <- fit.function(Y, X, beta_partials[[1]], thresh=thresh, lambda = lamseq[i], J=rank.max, warm.start = warm)
+      fiti <- fit.function(Y, X, beta_partials[[1]], thresh=thresh, lambda = lamseq[i], J=rank_maxes[1], warm.start = warm)
       
       # compute rank.max for next iteration
       rank <- sum(round(fiti$d, 4) > 0) # number of positive sing.values
-      rank.max <- min(rank+rank.step, rank.limit)
+      #rank.max <- min(rank+rank.step, rank.limit)
+      rank_maxes[1] <- min(rank+rank.step, rank.limit)
       test_estim = (fiti$u %*%(fiti$d*t(fiti$v)))[ymiss] + (X %*% fiti$beta.estim)[ymiss]
       err = test_error(test_estim, Y.valid)
       warm <- fiti # warm start for next 
@@ -63,7 +65,7 @@ simpute.cov.cv.L2 <- function(Y, X, W, Y.valid, lambda.factor=1/4, lambda.init=N
       #best_lambda1_fit = fiti
       
       for(j in 2:length(lambda1.grid)){
-         fiti <- fit.function(Y, X, beta_partials[[j]], thresh=thresh, lambda = lamseq[i], J=rank.max, warm.start = warm)
+         fiti <- fit.function(Y, X, beta_partials[[j]], thresh=thresh, lambda = lamseq[i], J=rank_maxes[j], warm.start = warm)
          test_estim = (fiti$u %*%(fiti$d*t(fiti$v)))[ymiss] + (X %*% fiti$beta.estim)[ymiss]
          err = test_error(test_estim, Y.valid)
          
@@ -71,11 +73,12 @@ simpute.cov.cv.L2 <- function(Y, X, W, Y.valid, lambda.factor=1/4, lambda.init=N
             best_lambda1 = lambda1.grid[j]
             best_lambda1.index = j
             best_lambda1_error = err
-            rank <- sum(round(fiti$d, 4) > 0) # number of positive sing.values
-            rank.max <- min(rank+rank.step, rank.limit)
+            rank.max <- rank_maxes[j] #min(rank+rank.step, rank.limit)
             #warm <- fiti
             #best_lambda1_fit <- fiti
          }
+         rank <- sum(round(fiti$d, 4) > 0) # number of positive sing.values
+         rank_maxes[j] <- min(rank+rank.step, rank.limit)
       }
       if(best_lambda1_error < best_overall_error){
          best_overall_lambda1 = best_lambda1

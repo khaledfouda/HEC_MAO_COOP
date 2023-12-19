@@ -60,15 +60,13 @@ simpute.cov.cv <- function(Y, X, W, Y.valid, lambda.factor=1/4, lambda.init=NA, 
    for(i in seq(along=lamseq)) {
       fiti <- fit.function(Y, X, beta_partial, thresh=thresh, lambda = lamseq[i], J=rank.max, warm.start = warm)
       
-      # compute rank.max for next iteration
-      rank <- sum(round(fiti$d, 4) > 0) # number of positive sing.values
-      rank.max <- min(rank+rank.step, rank.limit)
       
       # get test estimates and test error
       v=as.matrix(fiti$v)
       vd=v*outer(rep(1,nrow(v)),fiti$d)
       soft_estim = fiti$u %*% t(vd)  + X %*% fiti$beta.estim
       err = test_error(soft_estim[W==0], Y.valid)
+      rank <- sum(round(fiti$d, 4) > 0) # number of positive sing.values
       #----------------------------
       warm <- fiti # warm start for next 
       if(trace==TRUE)
@@ -91,6 +89,8 @@ simpute.cov.cv <- function(Y, X, W, Y.valid, lambda.factor=1/4, lambda.init=NA, 
          cat(sprintf("Performance didn't improve for the last %d iterations.", counter))
          break
       }
+      # compute rank.max for next iteration
+      rank.max <- min(rank+rank.step, rank.limit)
    }
    if(print.best==TRUE) print(best_fit)
    best_fit$A_hat = best_estimates
