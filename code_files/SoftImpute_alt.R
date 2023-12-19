@@ -1,7 +1,7 @@
 
 source("./code_files/Mao_import_lib.R")
 library(softImpute)
-dim = c(1000)
+dim = c(600)
 missingness = 0.9
 i=1
 coll=TRUE
@@ -20,17 +20,17 @@ sout1 <- simpute.als.cov(Y_train, gen.dat$X, beta_partial, 15, 1e-3, 30,trace.it
 
 sout1 <- simpute.cov.cv(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y[W_valid==0], 
                         trace=TRUE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=sout1$last.fit)
-
+#####################################
 start_time <- Sys.time()
-sout2 <- simpute.cov.cv.L2(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y[W_valid==0], 
-                        trace=TRUE, rank.limit = 30, lambda1=0,lambda1.grid = seq(0,20,length=10) ,n1n2 = 1, warm=sout1$last.fit)
-
+sout2 <- simpute.cov.cv.L2(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y[W_valid==0], rank.init = 10, rank.step = 5,
+                           lambda.factor = 1/5, 
+                        trace=TRUE, rank.limit = 30, lambda1=0,lambda1.grid = seq(0,20,length=10) ,n1n2 = 1, warm=NULL)
 round(as.numeric(difftime(Sys.time(), start_time,units = "secs")))
-
-test_error(sout1$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0])
-test_error(sout1$beta_hat, gen.dat$beta)
-test_error(sout1$B_hat, gen.dat$B)
-
+###############################################################
+test_error(sout2$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0])
+test_error(sout2$beta_hat, gen.dat$beta)
+test_error(sout2$B_hat, gen.dat$B)
+####################################################################
 
 sout2 <- simpute.als.cov.v2(Y_train, gen.dat$X, beta_partial, 15, 1e-3, 30,trace.it = TRUE)
 sout1 <- simpute.als.cov(Y_train, gen.dat$X, 3, 1e-3, 30,trace.it = FALSE)

@@ -3,8 +3,8 @@ title: "Comparing Mao Implementations"
 author: "Khaled Fouda"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=TRUE, message=FALSE, warning=FALSE}
