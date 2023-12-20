@@ -8,7 +8,7 @@ library(ggplot2)
 library(hexbin)
 library(patchwork)
 library(softImpute)
-
+library(irlba) #propack
 
 #setwd("/mnt/campus/math/research/kfouda/main/HEC/Youssef/HEC_MAO_COOP/")
 path_to_code = "/mnt/campus/math/research/kfouda/main/HEC/Youssef/HEC_MAO_COOP/code_files/"

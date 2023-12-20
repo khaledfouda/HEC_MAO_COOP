@@ -119,9 +119,9 @@ compare_and_save <- function(missingness,coll=TRUE,
       set.seed(2023)
       start_time = Sys.time()
       
-      sout <- simpute.cov.kfold(gen.dat$Y, gen.dat$X, gen.dat$W, n_folds = 5, print.best = FALSE,
+      sout <- simpute.cov.kfold(gen.dat$Y, gen.dat$X, gen.dat$W, n_folds = 3, print.best = FALSE,
                                  trace=FALSE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=NULL,tol = 2)
-      sout <- simpute.cov.kfold.lambda1(gen.dat$Y, gen.dat$X, gen.dat$W, sout$lambda2, n_folds = 5, print.best = FALSE, 
+      sout <- simpute.cov.kfold.lambda1(gen.dat$Y, gen.dat$X, gen.dat$W, sout$lambda2, n_folds = 3, print.best = FALSE, 
                                          trace=FALSE,lambda1.grid = seq(0,20,length.out=20) ,n1n2 = 1, warm=NULL,
                                          J=c(sout$J))
       
@@ -155,7 +155,7 @@ compare_and_save <- function(missingness,coll=TRUE,
                         "_coll_",coll, ".csv")
    
    write.csv(results, file = paste0(data_dir, filename), row.names = FALSE)
-   
+    
    #----------------------------
 }
 

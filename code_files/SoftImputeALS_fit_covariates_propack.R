@@ -21,7 +21,7 @@ clean.warm.start=function(a){
    else NULL
 }
 
-simpute.als.cov <-
+simpute.als.cov.propack <-
    function (Y, X, beta_partial, J = 2, thresh = 1e-05,lambda=0,maxit=100,trace.it=FALSE,warm.start=NULL){
    
    # are you scaling???
@@ -88,7 +88,10 @@ simpute.als.cov <-
       B=t(U)%*%yplus
       if(lambda>0)B=B*(Dsq/(Dsq+lambda))
       #print(yfill)
+      
       Bsvd=svd(t(B))
+      Bsvd = irlb
+      
       V=Bsvd$u
       Dsq=(Bsvd$d)
       U=U%*%Bsvd$v
