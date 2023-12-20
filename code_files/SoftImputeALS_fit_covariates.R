@@ -124,7 +124,7 @@ simpute.als.cov <-
    U=sU$u
    Dsq=sU$d
    V=V%*%sU$v
-   Dsq=pmax(Dsq-lambda,0)
+   Dsq=pmax(Dsq-lambda,0) 
    if(trace.it){
       yhat=U %*%(Dsq*t(V))
       obj=(.5*sum( (yplus-yhat)[!ynas]^2)+lambda*sum(Dsq))/nz

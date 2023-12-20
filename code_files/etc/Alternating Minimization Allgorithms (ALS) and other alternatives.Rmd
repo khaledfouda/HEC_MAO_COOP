@@ -10,7 +10,7 @@ output:
 ---
 
 ```{r setup, include=TRUE, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(echo = F, cache = TRUE, collapse=TRUE, results = "hold")
+knitr::opts_chunk$set(echo = T, include=TRUE, cache = TRUE, collapse=TRUE, results = "hold")
 library(kableExtra)
 library(magrittr)
 library(tidyverse)

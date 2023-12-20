@@ -1629,11 +1629,13 @@ and other alternatives</h1>
 </div>
 
 
-<pre class="r"><code>knitr::opts_chunk$set(echo = F, cache = FALSE)
+<pre class="r"><code>knitr::opts_chunk$set(echo = T, include=TRUE, cache = TRUE, collapse=TRUE, results = &quot;hold&quot;)
 library(kableExtra)
 library(magrittr)
 library(tidyverse)
 knitr::opts_knit$set(root.dir=&quot;/mnt/campus/math/research/kfouda/main/HEC/Youssef/HEC_MAO_COOP/&quot;)</code></pre>
+<pre class="r"><code>source(&quot;./code_files/Mao_import_lib.R&quot;)
+data_dir = &quot;./Mao/saved_data/&quot;</code></pre>
 <div id="references" class="section level2">
 <h2>References:</h2>
 <p>[1] Hastie (2015) Matrix Completion and Low-Rank SVD via Fast
@@ -1931,9 +1933,9 @@ minimize &amp;&amp; \frac{1}{2} \|Y- X\beta -AB^T \|^2_F + \lambda_1
 \end{aligned}
 \]</span></p>
 <p>We attempted the following in order to find the values of the
-hyperparameters <span class="math inline">\(\lambda_1\)</span>, <span class="math inline">\(\lambda_2\)</span>, and <span class="math inline">\(r\)</span> (the maximum rank attainable). Suppose
-that we have a list of possible of values for each parameter and that
-the optimal value is inside the list.</p>
+hyperparameters <span class="math inline">\(\lambda_1\)</span>, <span class="math inline">\(\lambda_2\)</span>, and <span class="math inline">\(r\)</span> (the rank to be retained). Suppose that
+we have a list of possible of values for each parameter and that the
+optimal value is inside the list.</p>
 <ol style="list-style-type: decimal">
 <li><p>For each <span class="math inline">\(\lambda_1\)</span>: fit a
 model (ALS1) to find the optimal <span class="math inline">\(\lambda_2\)</span> and <span class="math inline">\(r\)</span> and report the validation error. Pick
@@ -1958,6 +1960,217 @@ for computing the validation error (Average) and <span class="math inline">\(r^*
 for a certain <span class="math inline">\(\lambda_2\)</span> choice,
 after being rounded to 6 decimals.</p></li>
 </ol>
+<hr />
+<p>Below is illustration of Fitting Model (ALS1), (ALS2), and steps 1, 3
+and 4 in the hyperparamter optimization.</p>
+<p>We begin by simulation a 600x600 matrix with 10 covariates,
+collinearity, and <span class="math inline">\(90%\)</span> missing
+values.</p>
+<pre class="r"><code>gen.dat &lt;- generate_simulation_data_ysf(2,600,600,10,10, missing_prob = 0.9,coll=TRUE)</code></pre>
+<p>Split the observed portion into <span class="math inline">\(80\%\)</span> training and <span class="math inline">\(20\%\)</span> validation</p>
+<pre class="r"><code>W_valid &lt;- matrix.split.train.test(gen.dat$W, testp=0.2)
+Y_train = (gen.dat$Y * W_valid)
+Y_valid = gen.dat$Y[W_valid==0]</code></pre>
+<p>The following is the evaluation of <span class="math inline">\((X^TX)^{-1}X^T\)</span> which is given to the
+soft-impute function. Could be modified to add <span class="math inline">\(+ \lambda I_n\)</span></p>
+<pre class="r"><code>beta_partial = solve(t(gen.dat$X) %*% gen.dat$X) %*% t(gen.dat$X)</code></pre>
+<ol style="list-style-type: decimal">
+<li>Illustration of fitting (ALS1) with a fixed <span class="math inline">\(\lambda_2\)</span> and <span class="math inline">\(r\)</span> (also referred to as <span class="math inline">\(J\)</span> or max-rank).</li>
+</ol>
+<pre class="r"><code>lambda2 = 10
+max.rank = 15
+start_time &lt;- Sys.time()
+sout &lt;- simpute.als.cov(Y_train, gen.dat$X, beta_partial,J = max.rank, thresh =  1e-3, lambda= lambda2,trace.it = TRUE,warm.start = NULL)
+print(paste(&quot;Execution time is&quot;,round(as.numeric(difftime(Sys.time(), start_time,units = &quot;secs&quot;))), &quot;seconds&quot;))
+sout$A_hat = sout$u %*% (sout$d * t(sout$v))
+print(paste(&quot;Test error =&quot;, round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
+## 1 : obj 4.80084 ratio 79.67808 
+## 2 : obj 3.75461 ratio 31.89174 
+## 3 : obj 2.7137 ratio 0.6732816 
+## 4 : obj 2.16126 ratio 0.1102485 
+## 5 : obj 1.85245 ratio 0.03609425 
+## 6 : obj 1.66076 ratio 0.01628308 
+## 7 : obj 1.53124 ratio 0.008861214 
+## 8 : obj 1.43769 ratio 0.005460706 
+## 9 : obj 1.36649 ratio 0.003674175 
+## 10 : obj 1.31005 ratio 0.002636168 
+## 11 : obj 1.26385 ratio 0.001984315 
+## 12 : obj 1.22507 ratio 0.001548831 
+## 13 : obj 1.19189 ratio 0.001242916 
+## 14 : obj 1.16307 ratio 0.001018975 
+## 15 : obj 1.13771 ratio 0.0008493586 
+## final SVD: obj 1.1186 
+## [1] &quot;Execution time is 3 seconds&quot;
+## [1] &quot;Test error = 1.12725&quot;</code></pre>
+<p>Illustration of Model (ALS2) with fixed hyperparameters</p>
+<pre class="r"><code>lambda1 = 10
+beta_partial = solve(t(gen.dat$X) %*% gen.dat$X + diag(lambda1, ncol(gen.dat$X))) %*% t(gen.dat$X)
+
+start_time &lt;- Sys.time()
+sout &lt;- simpute.als.cov(Y_train, gen.dat$X, beta_partial,J = max.rank, thresh =  1e-3, lambda= lambda2,trace.it = TRUE,warm.start = NULL)
+print(paste(&quot;Execution time is&quot;,round(as.numeric(difftime(Sys.time(), start_time,units = &quot;secs&quot;))), &quot;seconds&quot;))
+sout$A_hat = sout$u %*% (sout$d * t(sout$v))
+print(paste(&quot;Test error =&quot;, round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
+## 1 : obj 4.84616 ratio 71.01222 
+## 2 : obj 3.8342 ratio 35.72374 
+## 3 : obj 2.77301 ratio 0.7136799 
+## 4 : obj 2.21069 ratio 0.1140776 
+## 5 : obj 1.8958 ratio 0.03724132 
+## 6 : obj 1.69996 ratio 0.01681457 
+## 7 : obj 1.56761 ratio 0.009153236 
+## 8 : obj 1.47213 ratio 0.005636359 
+## 9 : obj 1.39964 ratio 0.00378661 
+## 10 : obj 1.34231 ratio 0.002711825 
+## 11 : obj 1.2955 ratio 0.002037551 
+## 12 : obj 1.2563 ratio 0.001587933 
+## 13 : obj 1.22282 ratio 0.001272883 
+## 14 : obj 1.19376 ratio 0.001042922 
+## 15 : obj 1.16823 ratio 0.0008692711 
+## final SVD: obj 1.14871 
+## [1] &quot;Execution time is 3 seconds&quot;
+## [1] &quot;Test error = 1.1101&quot;</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Illustration of cross-validation (using validation set) for model
+(ALS1)</li>
+</ol>
+<pre class="r"><code>start_time &lt;- Sys.time()
+sout &lt;- simpute.cov.cv(Y_train, gen.dat$X, W_valid, Y_valid, 
+                        trace=TRUE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=NULL,tol = 2, print.best = FALSE)
+print(paste(&quot;Execution time is&quot;,round(as.numeric(difftime(Sys.time(), start_time,units = &quot;secs&quot;))), &quot;seconds&quot;))
+print(paste(&quot;Test error =&quot;, round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
+cat(sprintf(&quot;Optimal hyperparameters are: lambda2 = %.4f, r=%d&quot;, sout$lambda, sout$rank.max))
+##  1 lambda=   31.844, rank.max = 10  ==&gt; rank = 1, error = 0.45689
+##  2 lambda=   30.168, rank.max = 3  ==&gt; rank = 1, error = 0.43942
+##  3 lambda=   28.492, rank.max = 3  ==&gt; rank = 1, error = 0.42296
+##  4 lambda=   26.816, rank.max = 3  ==&gt; rank = 1, error = 0.40735
+##  5 lambda=    25.14, rank.max = 3  ==&gt; rank = 1, error = 0.39249
+##  6 lambda=   23.464, rank.max = 3  ==&gt; rank = 1, error = 0.37999
+##  7 lambda=   21.788, rank.max = 3  ==&gt; rank = 1, error = 0.36583
+##  8 lambda=   20.112, rank.max = 3  ==&gt; rank = 1, error = 0.35427
+##  9 lambda=   18.436, rank.max = 3  ==&gt; rank = 1, error = 0.34297
+## 10 lambda=    16.76, rank.max = 3  ==&gt; rank = 1, error = 0.33215
+## 11 lambda=   15.084, rank.max = 3  ==&gt; rank = 1, error = 0.32197
+## 12 lambda=   13.408, rank.max = 3  ==&gt; rank = 2, error = 0.31244
+## 13 lambda=   11.732, rank.max = 4  ==&gt; rank = 4, error = 0.30367
+## 14 lambda=   10.056, rank.max = 6  ==&gt; rank = 6, error = 0.29277
+## 15 lambda=   8.3799, rank.max = 8  ==&gt; rank = 8, error = 0.28763
+## 16 lambda=   6.7039, rank.max = 10  ==&gt; rank = 10, error = 0.28829
+## Performance didn&#39;t improve for the last 2 iterations.[1] &quot;Execution time is 26 seconds&quot;
+## [1] &quot;Test error = 0.12856&quot;
+## Optimal hyperparameters are: lambda2 = 8.3799, r=8</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Illustration of cross-validation (attempt 1).</li>
+</ol>
+<pre class="r"><code>start_time &lt;- Sys.time()
+lambda1.grid = seq(0,20, length.out=10)
+
+sout &lt;- softImputeALS_L2(Y_train, Y_valid, W_valid, gen.dat$X, lambda1.grid, no_cores=1, rank.limit=30) 
+print(paste(&quot;Execution time is&quot;,round(as.numeric(difftime(Sys.time(), start_time,units = &quot;secs&quot;))), &quot;seconds&quot;))
+print(paste(&quot;Test error =&quot;, round(test_error(sout$best_fit$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
+cat(sprintf(&quot;Optimal hyperparameters are: lambda1 = %.4f, lambda2 = %.4f, r=%d&quot;, sout$lambda1, sout$best_fit$lambda, sout$best_fit$rank.max))
+## Performance didn&#39;t improve for the last 5 iterations.Performance didn&#39;t improve for the last 5 iterations.Performance didn&#39;t improve for the last 5 iterations.Performance didn&#39;t improve for the last 5 iterations.Performance didn&#39;t improve for the last 5 iterations.Performance didn&#39;t improve for the last 5 iterations.Performance didn&#39;t improve for the last 5 iterations.Performance didn&#39;t improve for the last 5 iterations.Performance didn&#39;t improve for the last 5 iterations.Performance didn&#39;t improve for the last 5 iterations.[1] &quot;Execution time is 306 seconds&quot;
+## [1] &quot;Test error = 0.08768&quot;
+## Optimal hyperparameters are: lambda1 = 11.1111, lambda2 = 8.3799, r=9</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Illustration of cross-validation (attempt 3)</li>
+</ol>
+<pre class="r"><code>lambda1.grid = seq(0,30, length.out=10)
+
+start_time &lt;- Sys.time()
+# 1. set lambda1=0 and find lambda2 and r
+sout = simpute.cov.cv(Y_train, gen.dat$X, W_valid, Y_valid, trace=TRUE, rank.limit = 30, 
+                             print.best=FALSE, rank.step=4, type=&quot;als&quot;, lambda1=0, tol=2)
+# 2.  find lambda1 for the selected lambda2 and r
+sout &lt;- simpute.cov.cv.lambda1(Y_train, gen.dat$X, W_valid, Y_valid, sout$lambda, sout$rank.max, print.best = FALSE,
+                                    trace=TRUE, lambda1.grid = lambda1.grid ,n1n2 = 1, warm=NULL)
+print(paste(&quot;Execution time is&quot;,round(as.numeric(difftime(Sys.time(), start_time,units = &quot;secs&quot;))), &quot;seconds&quot;))
+print(paste(&quot;Test error =&quot;, round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
+cat(sprintf(&quot;Optimal hyperparameters are: lambda1 = %.4f, lambda2 = %.4f, r=%d&quot;, sout$lambda1, sout$lambda2, sout$J))
+   
+##  1 lambda=   31.844, rank.max = 10  ==&gt; rank = 1, error = 0.45628
+##  2 lambda=   30.168, rank.max = 5  ==&gt; rank = 1, error = 0.43909
+##  3 lambda=   28.492, rank.max = 5  ==&gt; rank = 1, error = 0.42278
+##  4 lambda=   26.816, rank.max = 5  ==&gt; rank = 1, error = 0.40725
+##  5 lambda=    25.14, rank.max = 5  ==&gt; rank = 1, error = 0.39245
+##  6 lambda=   23.464, rank.max = 5  ==&gt; rank = 1, error = 0.38000
+##  7 lambda=   21.788, rank.max = 5  ==&gt; rank = 1, error = 0.36585
+##  8 lambda=   20.112, rank.max = 5  ==&gt; rank = 1, error = 0.35433
+##  9 lambda=   18.436, rank.max = 5  ==&gt; rank = 1, error = 0.34306
+## 10 lambda=    16.76, rank.max = 5  ==&gt; rank = 1, error = 0.33221
+## 11 lambda=   15.084, rank.max = 5  ==&gt; rank = 1, error = 0.32202
+## 12 lambda=   13.408, rank.max = 5  ==&gt; rank = 4, error = 0.31256
+## 13 lambda=   11.732, rank.max = 8  ==&gt; rank = 8, error = 0.30371
+## 14 lambda=   10.056, rank.max = 12  ==&gt; rank = 12, error = 0.29239
+## 15 lambda=   8.3799, rank.max = 16  ==&gt; rank = 16, error = 0.28885
+## 16 lambda=   6.7039, rank.max = 20  ==&gt; rank = 20, error = 0.29084
+## Performance didn&#39;t improve for the last 2 iterations. 1 lambda1=        0, lambda2=   8.3799, rank.max = 16, error = 0.30268
+##  2 lambda1=   3.3333, lambda2=   8.3799, rank.max = 16, error = 0.28394
+##  3 lambda1=   6.6667, lambda2=   8.3799, rank.max = 16, error = 0.27950
+##  4 lambda1=       10, lambda2=   8.3799, rank.max = 16, error = 0.27500
+##  5 lambda1=   13.333, lambda2=   8.3799, rank.max = 16, error = 0.27119
+##  6 lambda1=   16.667, lambda2=   8.3799, rank.max = 16, error = 0.26849
+##  7 lambda1=       20, lambda2=   8.3799, rank.max = 16, error = 0.26705
+##  8 lambda1=   23.333, lambda2=   8.3799, rank.max = 16, error = 0.26682
+##  9 lambda1=   23.333, lambda2=   8.3799, rank.max = 16, error = 0.26682
+## 10 lambda1=   23.333, lambda2=   8.3799, rank.max = 16, error = 0.26682
+## [1] &quot;Execution time is 26 seconds&quot;
+## [1] &quot;Test error = 0.10481&quot;
+## Optimal hyperparameters are: lambda1 = 23.3333, lambda2 = 8.3799, r=16</code></pre>
+<ol start="5" style="list-style-type: decimal">
+<li>Similar to 4 but with K-fold cross-validation</li>
+</ol>
+<pre class="r"><code>lambda1.grid = seq(0,30, length.out=10)
+n_folds = 5
+
+start_time &lt;- Sys.time()
+# 1. set lambda1=0 and find lambda2 and r
+sout = simpute.cov.kfold(gen.dat$Y, gen.dat$X, gen.dat$W, n_folds = n_folds, print.best = FALSE,
+                                 trace=TRUE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=NULL,tol = 2)
+# 2.  find lambda1 for the selected lambda2 and r
+sout &lt;- simpute.cov.kfold.lambda1(gen.dat$Y, gen.dat$X, gen.dat$W, sout$lambda2, n_folds = n_folds, print.best = FALSE, 
+                                         trace=TRUE,lambda1.grid = seq(0,20,length.out=20) ,n1n2 = 1, warm=NULL,
+                                         J=c(sout$J))
+print(paste(&quot;Execution time is&quot;,round(as.numeric(difftime(Sys.time(), start_time,units = &quot;secs&quot;))), &quot;seconds&quot;))
+print(paste(&quot;Test error =&quot;, round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
+cat(sprintf(&quot;Optimal hyperparameters are: lambda1 = %.4f, lambda2 = %.4f, r=%d&quot;, sout$lambda1, sout$lambda2, sout$J))
+##  1 lambda=   39.337, rank.max = 3  ==&gt; rank = 1, error = 0.41522
+##  2 lambda=   37.266, rank.max = 3  ==&gt; rank = 1, error = 0.39134
+##  3 lambda=   35.196, rank.max = 3  ==&gt; rank = 1, error = 0.36873
+##  4 lambda=   33.126, rank.max = 3  ==&gt; rank = 1, error = 0.34723
+##  5 lambda=   31.055, rank.max = 3  ==&gt; rank = 1, error = 0.32720
+##  6 lambda=   28.985, rank.max = 3  ==&gt; rank = 1, error = 0.30571
+##  7 lambda=   26.915, rank.max = 3  ==&gt; rank = 1, error = 0.28937
+##  8 lambda=   24.844, rank.max = 3  ==&gt; rank = 1, error = 0.27168
+##  9 lambda=   22.774, rank.max = 3  ==&gt; rank = 1, error = 0.25662
+## 10 lambda=   20.704, rank.max = 3  ==&gt; rank = 1, error = 0.24145
+## 11 lambda=   18.633, rank.max = 3  ==&gt; rank = 1, error = 0.22839
+## 12 lambda=   16.563, rank.max = 3  ==&gt; rank = 1, error = 0.21770
+## 13 lambda=   14.492, rank.max = 3  ==&gt; rank = 1, error = 0.20587
+## 14 lambda=   12.422, rank.max = 3  ==&gt; rank = 3, error = 0.20064
+## 15 lambda=   10.352, rank.max = 5  ==&gt; rank = 5, error = 0.20110
+## Performance didn&#39;t improve for the last 2 iterations. 1 lambda1=        0, lambda2=   12.422, rank.max = 3, error = 0.23181
+##  2 lambda1=   1.0526, lambda2=   12.422, rank.max = 3, error = 0.19786
+##  3 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+##  4 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+##  5 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+##  6 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+##  7 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+##  8 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+##  9 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 10 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 11 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 12 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 13 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 14 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 15 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 16 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 17 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 18 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 19 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## 20 lambda1=   2.1053, lambda2=   12.422, rank.max = 3, error = 0.19093
+## [1] &quot;Execution time is 105 seconds&quot;
+## [1] &quot;Test error = 0.07308&quot;
+## Optimal hyperparameters are: lambda1 = 2.1053, lambda2 = 12.4221, r=3</code></pre>
 <p><span class="math display">\[
 \begin{aligned}
 \end{aligned}
