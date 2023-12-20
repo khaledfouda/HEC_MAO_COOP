@@ -23,17 +23,27 @@ start_time <- Sys.time()
 sout1 <- simpute.cov.cv(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y[W_valid==0], 
                         trace=TRUE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=NULL,tol = 2)
 
+round(as.numeric(difftime(Sys.time(), start_time,units = "secs")))
 sout1$rank.max
-sout3 <- simpute.cov.cv.lambda1(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y[W_valid==0], sout1$lambda, 
+sout2 <- simpute.cov.cv.lambda1(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y[W_valid==0], sout1$lambda, 
                               trace=TRUE,lambda1.grid = seq(0,20,length.out=10) ,n1n2 = 1, warm=NULL,
                               J=c(sout1$rank.max))
+
+##############################################################
+start_time <- Sys.time()
+sout3 <- simpute.cov.kfold(gen.dat$Y, gen.dat$X, gen.dat$W, 
+                        trace=TRUE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=NULL,tol = 2)
 round(as.numeric(difftime(Sys.time(), start_time,units = "secs")))
+sout4 <- simpute.cov.kfold.lambda1(gen.dat$Y, gen.dat$X, gen.dat$W, sout3$lambda2, 
+                                trace=TRUE,lambda1.grid = seq(0,20,length.out=10) ,n1n2 = 1, warm=NULL,
+                                J=c(sout3$J))
+
+
 ###############################################################
-sout3$fit$J
-test_error(sout3$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0])
-test_error(sout3$beta_hat, gen.dat$beta)
-test_error(sout3$B_hat, gen.dat$B)
-sout3$rank_A
+test_error(sout2$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0])
+test_error(sout2$beta_hat, gen.dat$beta)
+test_error(sout2$B_hat, gen.dat$B)
+sout2$rank_A
 #####################################
 start_time <- Sys.time()
 sout2 <- simpute.cov.cv.L2(gen.dat$Y*W_valid, gen.dat$X, W_valid, gen.dat$Y[W_valid==0], rank.init = 10, rank.step = 5,

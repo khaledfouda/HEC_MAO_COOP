@@ -26,3 +26,4 @@ source(paste0(path_to_code,"SoftImputeALS_fit_covariates.R"))
 source(paste0(path_to_code,"SoftImpute_cv_covariates.R")) # fit to lambda2 only with lambda1 fixed
 source(paste0(path_to_code,"SoftImpute_cv_covariates_v4.R")) # fit to lambda 1 and 2 at the same time
 source(paste0(path_to_code,"SoftImpute_cv_covariates_v5.R")) # fit to lambda1 after knowing lambda2
+source(paste0(path_to_code,"SoftImpute_cv_covariates_v6.R")) # all previous with k-fold

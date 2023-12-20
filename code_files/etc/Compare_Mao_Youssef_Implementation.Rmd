@@ -39,6 +39,7 @@ results_YsfSim90.coll <-read.csv(paste0(data_dir, "compare_Mao_Youssef_Implement
 
 ```{r}
 # Function to color minimum values in green
+
 color_min_values <- function(data, columns) {
   data <- as.data.frame(data)
   for (col_name in columns) {
@@ -60,8 +61,10 @@ print_table <- function(results, missing=FALSE, prob=NA, caption=""){
       #mutate(across(.cols = contains("Ysf.error"), ~ round(., 7))) %>% 
       #mutate(across(.cols = contains("new.error"), ~ round(., 7))) %>%
       mutate(missing_prob = prob, Mao.Method = "Mao", 
-             simpute.Method="Simpute", simputeCov.Method="Simpute/Covariates",
-             simputeL2.Method="Simpute/Covariates/L2") %>%
+             simpute.Method="Simpute", 
+             simputeCov.Method="Simpute/Covariates",
+             simputeL2.Method="Simpute/Covariates/L2",
+             simputeKF.Method="Simpute/Covariates/L2/K-fold") %>%
       arrange(simpute.rank) ### this is a temporary fix; will fix it later.
       
    results %>%
@@ -72,6 +75,8 @@ print_table <- function(results, missing=FALSE, prob=NA, caption=""){
       select(Dim, true_rank, missing_prob, contains("simputeCov")) -> simcov_results
    results %>%
       select(Dim, true_rank, missing_prob, contains("simputeL2")) -> simL2_results
+   results %>%
+      select(Dim, true_rank, missing_prob, contains("simputeKF")) -> simKF_results
    
    
    sim_results$simpute.lambda.1 = 9999
@@ -79,24 +84,28 @@ print_table <- function(results, missing=FALSE, prob=NA, caption=""){
    simcov_results$simputeCov.lambda.1 = 9999
    simcov_results$simputeCov.alpha = 9999
    simL2_results$simputeL2.alpha = 9999
+   simKF_results$simputeKF.alpha = 9999
    
    names(Mao_results) <- gsub("Mao\\.", "", names(Mao_results))
    names(sim_results) <- gsub("simpute\\.", "", names(sim_results))
    names(simcov_results) <- gsub("simputeCov\\.", "", names(simcov_results))
    names(simL2_results) <- gsub("simputeL2\\.", "", names(simL2_results))
+   names(simKF_results) <- gsub("simputeKF\\.", "", names(simKF_results))
   
    names(Mao_results) <- gsub("error\\.", "", names(Mao_results))
    names(sim_results) <- gsub("error\\.", "", names(sim_results))
    names(simcov_results) <- gsub("error\\.", "", names(simcov_results))
    names(simL2_results) <- gsub("error\\.", "", names(simL2_results))
+   names(simKF_results) <- gsub("error\\.", "", names(simKF_results))
    
    Mao_results$Method <- 'Mao'
    sim_results$Method <- 'SImpute/Original'
    simcov_results$Method <- 'SImpute/Covariates'
    simL2_results$Method <- 'SImpute/Covariates/L2'
+   simKF_results$Method <- 'SImpute/Covariates/L2/K-fold'
    
-   combined_results <- rbind(Mao_results, sim_results, simcov_results, simL2_results) %>% 
-      mutate(tmp_rank = rep(1:4,4)) %>% # temporary fix, change!!
+   combined_results <- rbind(Mao_results, sim_results, simcov_results, simL2_results, simKF_results) %>% 
+      mutate(tmp_rank = rep(1:4,5)) %>% # temporary fix, change!!
       arrange(tmp_rank) %>% # temporary fix, change!!
       select(-Dim, -tmp_rank) %>%
       rename(A=all, A_test=test)
@@ -118,17 +127,17 @@ print_table <- function(results, missing=FALSE, prob=NA, caption=""){
 # Color the minimum errors for each pair of rows (200x200, 400x400, etc.)
    error_columns <- c("A_test", "B", "beta", "A","time")
    combined_results$rank_diff = combined_results$rank - combined_results$true_rank
-   for(i in seq(1,16,4))
-      combined_results[i:(i+3), ] <- color_min_values(combined_results[i:(i+3), ], error_columns)
+   for(i in seq(1,17,5))
+      combined_results[i:(i+4), ] <- color_min_values(combined_results[i:(i+4), ], error_columns)
    
    combined_results %<>% mutate(seconds=time) %>% select(-time) 
    kable(combined_results, "html", escape=FALSE, align = 'c', caption=caption) %>%
      kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "center") %>%
      add_header_above(c("Fixed" = nfixed, "Hyperparameters" = 3, "Error on" = 4,"Rank"=2, "Time"=1)) %>%
-     pack_rows("400x400", 1, 4) %>%
-     pack_rows("600x600", 5, 8) %>% 
-     pack_rows("800x800", 9, 12) %>% 
-     pack_rows("1000x1000", 13, 16)
+     pack_rows("400x400", 1, 5) %>%
+     pack_rows("600x600", 6, 10) %>% 
+     pack_rows("800x800", 11, 15) %>% 
+     pack_rows("1000x1000", 16, 20)
   
 }
 ```

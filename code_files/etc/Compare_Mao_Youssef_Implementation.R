@@ -31,7 +31,9 @@ compare_and_save <- function(missingness,coll=TRUE,
                          simpute.error.B = NA,
                          simpute.rank = NA,
                          simputeL2.alpha=NA, simputeL2.lambda.1=NA, simputeL2.lambda.2=NA, simputeL2.error.test=NA,
-                         simputeL2.error.all=NA, simputeL2.error.B=NA, simputeL2.error.beta=NA, simputeL2.rank=NA, simputeL2.time=NA)
+                         simputeL2.error.all=NA, simputeL2.error.B=NA, simputeL2.error.beta=NA, simputeL2.rank=NA, simputeL2.time=NA,
+                         simputeKF.alpha=NA, simputeKF.lambda.1=NA, simputeKF.lambda.2=NA, simputeKF.error.test=NA,
+                         simputeKF.error.all=NA, simputeKF.error.B=NA, simputeKF.error.beta=NA, simputeKF.rank=NA, simputeKF.time=NA)
    
    for(i in 1:length(dim)){
       
@@ -112,6 +114,26 @@ compare_and_save <- function(missingness,coll=TRUE,
       results$simputeL2.error.B[i] = test_error(sout$B_hat, gen.dat$B)
       results$simputeL2.rank[i] = sout$rank_A
       print("....")
+      #-------------------------------------------------------------------------------------
+      # Soft Impute with Covariates and With L2 regularization on the covariates and K-fold cross-validation
+      set.seed(2023)
+      start_time = Sys.time()
+      
+      sout <- simpute.cov.kfold(gen.dat$Y, gen.dat$X, gen.dat$W, n_folds = 3, print.best = FALSE,
+                                 trace=FALSE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=NULL,tol = 2)
+      sout <- simpute.cov.kfold.lambda1(gen.dat$Y, gen.dat$X, gen.dat$W, sout$lambda2, n_folds = 3, print.best = FALSE, 
+                                         trace=FALSE,lambda1.grid = seq(0,20,length.out=20) ,n1n2 = 1, warm=NULL,
+                                         J=c(sout$J))
+      
+      results$simputeKF.time[i] =round(as.numeric(difftime(Sys.time(), start_time,units = "secs")))
+      results$simputeKF.lambda.1[i] = sout$lambda1
+      results$simputeKF.lambda.2[i] = sout$lambda2
+      results$simputeKF.error.test[i] = test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0])
+      results$simputeKF.error.all[i] = test_error(sout$A_hat, gen.dat$A)
+      results$simputeKF.error.beta[i] = test_error(sout$beta_hat, gen.dat$beta)
+      results$simputeKF.error.B[i] = test_error(sout$B_hat, gen.dat$B)
+      results$simputeKF.rank[i] = sout$rank_A
+      print(".....")
       #--------------------------------------------------------------------------------
       # saving plots to disk
       if(plot==TRUE){
