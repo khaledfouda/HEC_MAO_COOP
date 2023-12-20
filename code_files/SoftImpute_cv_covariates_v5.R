@@ -58,6 +58,7 @@ simpute.cov.cv.lambda1 <- function(Y, X, W, Y.valid, lambda2=NA, J=NA,
    results$A_hat = results$B_hat + X %*% fiti$beta.estim
    results$beta_hat = fiti$beta.estim
    results$rank_A = qr(results$A_hat)$rank
+   results$J = J
    return(results)
 }
 #--------------------------------------------------------------------

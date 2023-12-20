@@ -11,7 +11,7 @@
 
 <meta name="author" content="Khaled Fouda" />
 
-<meta name="date" content="2023-12-18" />
+<meta name="date" content="2023-12-20" />
 
 <title>Alternating Minimization Allgorithms (ALS) and other alternatives</title>
 
@@ -1624,7 +1624,7 @@ display: none;
 <h1 class="title toc-ignore">Alternating Minimization Allgorithms (ALS)
 and other alternatives</h1>
 <h4 class="author">Khaled Fouda</h4>
-<h4 class="date">2023-12-18</h4>
+<h4 class="date">2023-12-20</h4>
 
 </div>
 
@@ -1779,8 +1779,8 @@ estimates of <span class="math inline">\(A=UD\)</span> and <span class="math inl
 <ol style="list-style-type: decimal">
 <li><p>Solve for <span class="math inline">\(B\)</span> as:</p>
 <ul>
-<li>$DB^T = (D^2 + I)<sup>{-1}D</sup>2U<sup>TY</sup>* =
-(D<sup>2/(D</sup>2+))U<sup>TY</sup>* $</li>
+<li><span class="math inline">\(DB^T = (D^2 + \lambda I)^{-1}D^2U^TY^* =
+(D^2/(D^2+\lambda))U^TY^*\)</span></li>
 <li><span class="math inline">\(\bar{B}D =
 \tilde{U}\tilde{D}^2\tilde{V}^T\)</span>
 <ul>
@@ -1919,6 +1919,45 @@ P_{\Omega}(Y)+P_{\overline \Omega}(AB^T+X\beta)\)</span></li>
 I)^{-1}A^TY^+\)</span></li>
 </ol>
 <hr />
+</div>
+<div id="l2-regularization-on-covariate-effects" class="section level2">
+<h2>L2 Regularization on Covariate effects:</h2>
+<p>Consider the following model:</p>
+<p><span class="math display">\[
+\begin{aligned}
+minimize &amp;&amp; \frac{1}{2} \|Y- X\beta -AB^T \|^2_F + \lambda_1
+\|\beta\|^2_F + \frac{\lambda_2}{2} (\|A\|^2_F+\|B\|^2_F)  &amp;&amp;
+(ALS2)
+\end{aligned}
+\]</span></p>
+<p>We attempted the following in order to find the values of the
+hyperparameters <span class="math inline">\(\lambda_1\)</span>, <span class="math inline">\(\lambda_2\)</span>, and <span class="math inline">\(r\)</span> (the maximum rank attainable). Suppose
+that we have a list of possible of values for each parameter and that
+the optimal value is inside the list.</p>
+<ol style="list-style-type: decimal">
+<li><p>For each <span class="math inline">\(\lambda_1\)</span>: fit a
+model (ALS1) to find the optimal <span class="math inline">\(\lambda_2\)</span> and <span class="math inline">\(r\)</span> and report the validation error. Pick
+<span class="math inline">\((\lambda_1^*,\lambda_2^*,r^*)\)</span>
+corresponding to the minimum error. This method provides the best
+results, however, it’s very slow as we multiply the time to fit a
+regular model by the number of <span class="math inline">\(\lambda_1\)</span> values. Assuming that we’re
+separating the data into training (<span class="math inline">\(80\%\)</span>) and validation (<span class="math inline">\(20\%\)</span>).</p></li>
+<li><p>Changing the value of <span class="math inline">\(\lambda_1\)</span> within the model (ALS1)
+interferes with the convergence and is therefore avoided.</p></li>
+<li><p>We noticed from method (1.) that the optimal value of <span class="math inline">\(\lambda_2\)</span> in (ALS2) is equal, almost all
+the times, to the optimal <span class="math inline">\(\lambda_2\)</span>
+from (ALS1), Therefore, I fitted the model (ALS1) first to obtain <span class="math inline">\(\lambda_2^*\)</span> and <span class="math inline">\(r^*\)</span>(<span class="math inline">\(\lambda_1=0\)</span>). Then, I fitted model (ALS2)
+for all the values of <span class="math inline">\(\lambda_1\)</span>
+while setting <span class="math inline">\(\lambda_2=\lambda_2^*\)</span>
+and <span class="math inline">\(r=r^*\)</span>. I used the same
+training-validation split method. The method improved the results and
+the fitting time was better than Mao and very close the training time in
+Model (ALS1).</p></li>
+<li><p>Finally, I did 3. while performing K-fold (K=3) cross-validation
+for computing the validation error (Average) and <span class="math inline">\(r^*\)</span> (also average). Note that <span class="math inline">\(r\)</span> is the number of non-zero Eigen values
+for a certain <span class="math inline">\(\lambda_2\)</span> choice,
+after being rounded to 6 decimals.</p></li>
+</ol>
 <p><span class="math display">\[
 \begin{aligned}
 \end{aligned}

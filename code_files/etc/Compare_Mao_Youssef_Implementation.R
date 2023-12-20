@@ -86,7 +86,7 @@ compare_and_save <- function(missingness,coll=TRUE,
       # soft Impute model with covariates
       start_time = Sys.time()
       sout <- simpute.cov.cv(Y_train, gen.dat$X, W_valid, Y_valid, trace=FALSE, rank.limit = 30, 
-                             print.best=FALSE, rank.step=4, type="als", lambda1=0)
+                             print.best=FALSE, rank.step=4, type="als", lambda1=0, tol=2)
       results$simputeCov.time[i] =round(as.numeric(difftime(Sys.time(), start_time,units = "secs")))
       results$simputeCov.lambda.1[i] = 0
       results$simputeCov.lambda.2[i] = sout$lambda
@@ -101,7 +101,7 @@ compare_and_save <- function(missingness,coll=TRUE,
       set.seed(2023)
       start_time = Sys.time()
       sout <- simpute.cov.cv(Y_train, gen.dat$X, W_valid, Y_valid, trace=FALSE, rank.limit = 30, 
-                             print.best=FALSE, rank.step=4, type="als", lambda1=0)
+                             print.best=FALSE, rank.step=4, type="als", lambda1=0, tol=2)
       sout <- simpute.cov.cv.lambda1(Y_train, gen.dat$X, W_valid, Y_valid, sout$lambda, sout$rank.max, print.best = FALSE,
                                     trace=FALSE, lambda1.grid = seq(0,20,length.out=20) ,n1n2 = 1, warm=NULL)
       
@@ -119,9 +119,9 @@ compare_and_save <- function(missingness,coll=TRUE,
       set.seed(2023)
       start_time = Sys.time()
       
-      sout <- simpute.cov.kfold(gen.dat$Y, gen.dat$X, gen.dat$W, n_folds = 3, print.best = FALSE,
+      sout <- simpute.cov.kfold(gen.dat$Y, gen.dat$X, gen.dat$W, n_folds = 5, print.best = FALSE,
                                  trace=FALSE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=NULL,tol = 2)
-      sout <- simpute.cov.kfold.lambda1(gen.dat$Y, gen.dat$X, gen.dat$W, sout$lambda2, n_folds = 3, print.best = FALSE, 
+      sout <- simpute.cov.kfold.lambda1(gen.dat$Y, gen.dat$X, gen.dat$W, sout$lambda2, n_folds = 5, print.best = FALSE, 
                                          trace=FALSE,lambda1.grid = seq(0,20,length.out=20) ,n1n2 = 1, warm=NULL,
                                          J=c(sout$J))
       
