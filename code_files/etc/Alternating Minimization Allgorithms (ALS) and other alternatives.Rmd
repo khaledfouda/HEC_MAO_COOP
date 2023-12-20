@@ -97,7 +97,7 @@ $$
 minimize_{B} && \frac{1}{2} \|Y^*-A\tilde B^T\|^2_F + \lambda ||\tilde B||^2_F.
 \end{aligned}
 $$
-With $Y^* =  P_{\Omega}(Y) + P_{\overline \Omega}(AB') = (P_{\Omega}(Y) + P_{\Omega}(AB')) + AB' $
+With $Y^* =  P_{\Omega}(Y) + P_{\overline \Omega}(AB') = (P_{\Omega}(Y) + P_{\Omega}(AB')) + AB'$
 
 Which is again, a sparse + low-rank.
 

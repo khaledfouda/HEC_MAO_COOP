@@ -62,9 +62,34 @@ sout1 <- simpute.als.cov(Y_train, gen.dat$X, 3, 1e-3, 30,trace.it = FALSE)
 
 
 sout2 <- simpute.svd.cov(Y_train, gen.dat$X, 3, 1e-3, 30,trace.it = TRUE)
+#########################################################
+
+gen.dat <- generate_simulation_data_ysf(2,600,600,10,10, missing_prob = 0.9,coll=TRUE)
+
+W_valid <- matrix.split.train.test(gen.dat$W, testp=0.2)
+Y_train = (gen.dat$Y * W_valid)
+Y_valid = gen.dat$Y[W_valid==0]
+
+beta_partial = solve(t(gen.dat$X) %*% gen.dat$X) %*% t(gen.dat$X)
+
+lambda2 = 10
+max.rank = 5
+
+start_time <- Sys.time()
+sout <- simpute.als.cov(Y_train, gen.dat$X, beta_partial,J = max.rank, thresh =  1e-3, lambda= lambda2,trace.it = TRUE,warm.start = NULL)
+print(paste("Execution time is",round(as.numeric(difftime(Sys.time(), start_time,units = "secs"))), "seconds"))
+sout$A_hat = sout$u %*% (sout$d * t(sout$v))
+print(paste("Test error =", round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
+
+#**
+start_time <- Sys.time()
+sout <- simpute.als.cov.propack(Y_train, gen.dat$X, beta_partial,J = max.rank, thresh =  1e-3, lambda= lambda2,trace.it = TRUE,warm.start = NULL)
+print(paste("Execution time is",round(as.numeric(difftime(Sys.time(), start_time,units = "secs"))), "seconds"))
+sout$A_hat = sout$u %*% (sout$d * t(sout$v))
+print(paste("Test error =", round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
 
 
-
+############################################
 lambda1.grid <- seq(0,100,length.out=4)
 model_output <- list()
 validation_errors <- rep(NA, length(lambda1.grid))
