@@ -1,5 +1,5 @@
 ---
-title: "Alternating Minimization Allgorithms (ALS) and other alternatives"
+title: "3 - Alternating Minimization Allgorithms (ALS)"
 author: "Khaled Fouda"
 date: "`r Sys.Date()`"
 output:
@@ -10,7 +10,7 @@ output:
 ---
 
 ```{r setup, include=TRUE, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(echo = T, include=TRUE, cache = TRUE, collapse=TRUE, results = "hold")
+knitr::opts_chunk$set(echo = T, include=TRUE, cache = TRUE, results = "hold")
 library(kableExtra)
 library(magrittr)
 library(tidyverse)
@@ -27,11 +27,10 @@ data_dir = "./Mao/saved_data/"
 ## References:
 
 [1] Hastie (2015) Matrix Completion and Low-Rank SVD via Fast Alternating Least Squares
-[2]
 
 
 
-Muilding on our model in the document "Soft Impute With Covariates", we explore alternative ways of computing the low-rank matrix "M" while achieving the same results. The alternative ways are much faster that they outperform Mao's model.
+Building on our model in the document "Soft Impute With Covariates", we explore alternative ways of computing the low-rank matrix "M" while achieving the same results. The alternative ways are much faster that they outperform Mao's model.
 
 We begin by introducing the ALS algorithm for estimating M, first without covariates:
 
@@ -42,7 +41,7 @@ $$
 minimize_M && \frac{1}{2} \|Y-M\|^2_F + \lambda ||M||_*
 \end{aligned}
 $$
-which as the following soluion
+which as the following solution
 
 
 
@@ -51,7 +50,7 @@ $$
 \hat{M} = S_\lambda(Y) = U D_\lambda V'&& with && D_\lambda = diag[(d_1-\lambda)_+\cdots(d_r-\lambda)_+]
 \end{aligned}
 $$
-where $r$ acts as an upper bound to the rank of $\hat{M}$. Since we don't require the full SVD decomposition to compute $\hat{M}$ and we only need the rows/columns upto $r$, the authors have discussed the possibility of using alternative methods to do partial svd decomposition. Specifically, they discussed the use of the algorithm "PROPABK" which is an state-of-the-art method of computing SVD decomposition upto certain number of Eigen Values. However, they didn't do it in their implementation and they used full SVD decomposition instead. 
+where $r$ acts as an upper bound to the rank of $\hat{M}$. Since we don't require the full SVD decomposition to compute $\hat{M}$ and we only need the rows/columns up-to $r$, the authors have discussed the possibility of using alternative methods to do partial svd decomposition. Specifically, they discussed the use of the algorithm "PROPABK" which is an state-of-the-art method of computing SVD decomposition up-to certain number of Eigen Values. However, they didn't do it in their implementation and they used full SVD decomposition instead. 
 
 
 A second trick they proposed to avoid the high computations is that they rewrote $\hat{Y}$ as 
@@ -319,7 +318,7 @@ sout <- simpute.cov.cv(Y_train, gen.dat$X, W_valid, Y_valid,
                         trace=TRUE, rank.limit = 30, lambda1=0,n1n2 = 1, warm=NULL,tol = 2, print.best = FALSE)
 print(paste("Execution time is",round(as.numeric(difftime(Sys.time(), start_time,units = "secs"))), "seconds"))
 print(paste("Test error =", round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
-cat(sprintf("Optimal hyperparameters are: lambda2 = %.4f, r=%d", sout$lambda, sout$rank.max))
+print(sprintf("Optimal hyperparameters are: lambda2 = %.4f, r=%d", sout$lambda, sout$rank.max))
 ```
 
 3. Illustration of cross-validation (attempt 1).
@@ -331,7 +330,7 @@ lambda1.grid = seq(0,20, length.out=10)
 sout <- softImputeALS_L2(Y_train, Y_valid, W_valid, gen.dat$X, lambda1.grid, no_cores=1, rank.limit=30) 
 print(paste("Execution time is",round(as.numeric(difftime(Sys.time(), start_time,units = "secs"))), "seconds"))
 print(paste("Test error =", round(test_error(sout$best_fit$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
-cat(sprintf("Optimal hyperparameters are: lambda1 = %.4f, lambda2 = %.4f, r=%d", sout$lambda1, sout$best_fit$lambda, sout$best_fit$rank.max))
+print(sprintf("Optimal hyperparameters are: lambda1 = %.4f, lambda2 = %.4f, r=%d", sout$lambda1, sout$best_fit$lambda, sout$best_fit$rank.max))
 
 ```
 
@@ -349,7 +348,7 @@ sout <- simpute.cov.cv.lambda1(Y_train, gen.dat$X, W_valid, Y_valid, sout$lambda
                                     trace=TRUE, lambda1.grid = lambda1.grid ,n1n2 = 1, warm=NULL)
 print(paste("Execution time is",round(as.numeric(difftime(Sys.time(), start_time,units = "secs"))), "seconds"))
 print(paste("Test error =", round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
-cat(sprintf("Optimal hyperparameters are: lambda1 = %.4f, lambda2 = %.4f, r=%d", sout$lambda1, sout$lambda2, sout$J))
+print(sprintf("Optimal hyperparameters are: lambda1 = %.4f, lambda2 = %.4f, r=%d", sout$lambda1, sout$lambda2, sout$J))
    
 ```
 
@@ -369,7 +368,7 @@ sout <- simpute.cov.kfold.lambda1(gen.dat$Y, gen.dat$X, gen.dat$W, sout$lambda2,
                                          J=c(sout$J))
 print(paste("Execution time is",round(as.numeric(difftime(Sys.time(), start_time,units = "secs"))), "seconds"))
 print(paste("Test error =", round(test_error(sout$A_hat[gen.dat$W==0], gen.dat$A[gen.dat$W==0]),5)))
-cat(sprintf("Optimal hyperparameters are: lambda1 = %.4f, lambda2 = %.4f, r=%d", sout$lambda1, sout$lambda2, sout$J))
+print(sprintf("Optimal hyperparameters are: lambda1 = %.4f, lambda2 = %.4f, r=%d", sout$lambda1, sout$lambda2, sout$J))
 
 ```
 

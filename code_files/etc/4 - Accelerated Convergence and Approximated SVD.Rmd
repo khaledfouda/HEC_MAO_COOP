@@ -1,0 +1,147 @@
+---
+title: "4 - Accelerated Convergence and Approximated SVD"
+author: "Khaled Fouda"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r setup, include=TRUE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = T, include=TRUE, cache = TRUE, results = "hold")
+library(kableExtra)
+library(magrittr)
+library(tidyverse)
+knitr::opts_knit$set(root.dir="/mnt/campus/math/research/kfouda/main/HEC/Youssef/HEC_MAO_COOP/")
+```
+
+
+```{r include=TRUE, message=FALSE, warning=FALSE}
+source("./code_files/Mao_import_lib.R")
+data_dir = "./Mao/saved_data/"
+
+```
+
+## References:
+
+- main
+
+   [1] ["Accelerated and Inexact Soft-Impute for Large-Scale Matrix Completion" Q.Yao and J.Kwok. IEEE             2019](https://www.computer.org/csdl/journal/tk/2019/09/08449114/13rRUytWF9Q)
+   
+- Extra
+
+   [2] ["FINDING STRUCTURE WITH RANDOMNESS: PROBABILISTIC ALGORITHMS FOR CONSTRUCTING APPROXIMATE MATRIX DECOMPOSITIONS"](https://arxiv.org/pdf/0909.4061.pdf) 
+   2010 - for approximating SVT decomposition
+   
+   [3] ["Proximal Gradient Descent and Acceleration"](https://www.stat.cmu.edu/~ryantibs/convexopt-F16/lectures/prox-grad.pdf) Lecture notes on Proximal Algorithms by Tibshirani 
+
+In this paper the authors considered two main modification to the Soft-Impute method:
+
+1. Accelrating the convergence rate by using the power method (an iterative algorithm to find an approximation to the largest dominant eigenvalue and the corresponding eigenvector). 
+
+2. To improve the algorithm even more, they approximated the SVD decomposition by representing the loss function as two two separable functions (error+regularization) and using proximal algorithms for optimization given that our loss function is convex. They reported that accelartion has improved the convergence rate from $O(1/T)$ in Soft-Impute to $O(1/T^2)$, where $T$ is the number of iterations.
+
+
+Consider our usual model without covariates
+
+
+$$
+\begin{aligned}
+minimize_M && F(M) = \frac{1}{2} \|Y-M\|^2_F + \lambda ||M||_*
+\end{aligned}
+$$
+
+
+
+
+which as the following solution
+
+
+
+$$
+\begin{aligned}
+\hat{M} = SVT_\lambda(Y) = U D_\lambda V'&& with && D_\lambda = diag[(d_1-\lambda)_+\cdots(d_r-\lambda)_+]
+\end{aligned}
+
+
+$$
+
+## Part 1: Acceleration
+
+Consider the partition of
+
+
+$$
+\begin{aligned}
+&F(M) = f(M) + g(M) \\
+&f(M) = \frac{1}{2} \|Y-M\|^2_F + \\
+&g(M) = \lambda ||M||_*
+\end{aligned}
+$$
+We want to minimize $F(M)$. The proximal algorithms provide a framework to solve this problem considering that both f, g are convex, and f is smooth but g is possibly non-smooth. The proximal algorithm generates a sequence of estimates $\{M_t\}$ as:
+
+
+$$
+\begin{aligned}
+M_{t+1} = prox_{\mu g}(Y_t) = arg min_M && \frac{1}{2} \|Y_t-M\|^2_F + \mu g(M),
+\end{aligned}
+$$
+where
+
+$$
+\begin{aligned}
+&Y_t = Z_t - \mu \Delta f(Z_t),\\
+&Z_t = (1+\theta_t) M_t - \theta_t M_{t-1},\\
+& \theta_{t+1} = \frac{t-1}{t+2}
+\end{aligned}
+$$
+
+and $\mu \le 1/\rho$ being a fixed step size and $f$ is $\rho$-Lipshitz smooth($\|\Delta f(M_1)-\Delta f(M_2)\| \le \rho \| M_1 - M_2\|$).
+
+If we set $\mu=1$, then $prox_{g}(Y_t) = SVT_{\lambda}(Y_t)$.
+
+The accelrated algorithm has a slightly higher iteration complexity that the soft-impute. However, this is compensated by improving the convergence rate.
+
+
+## Part 2: SVT Approximation
+
+Reference 3 provide multiple methods to approximate the SVD or the QR decomposition of matrices. Assume that we have a matrix $A$ of large dimensions $m \times n$ and we want to approximate $A=U\Sigma V^T$. The algorithm consists of two stages:
+
+   1. the first stage is to compute a matrix $Q$ of dimensions $m \times k$ where k is a much lower dimension and that $Q$ is the basis of A (has orthonormal columns and $A \approx Q Q^TA$). 
+   
+   2. The second stage  Computes the SVD decomposition of $Q^TA \in \Re^{k\times m} = [\tilde U,\Sigma,V] $
+      - set $U \leftarrow Q \tilde U$
+      - $\hat{A} = U \Sigma_\lambda V^T$
+      
+
+The proposed algorithm for stage 1 (by Yao et al.) is as follows:
+
+---
+title: "Algorithm in R Markdown"
+output: pdf_document
+---
+
+
+**Algorithm 1: Approximation -  Stange 1** $A$, $R$, $J$
+
+**Require**: $A \in \mathbb{R}^{m \times n}$, $R \in \mathbb{R}^{n \times k}$, and the number of iterations $J$;
+
+1. Initialize $Q_0$ with QR factorization of $AR$:
+   
+   $$Q_0 = QR(AR)$$
+   
+   where QR(.) denotes the QR factorization.
+
+2. For $j = 1$ to $J$ do:
+
+   a. Update $Q_j$ with QR factorization of $A{A}^T Q_{j-1}$:
+   
+   $$Q_j = QR(A{A}^T Q_{j-1})$$
+   
+3. Return $Q_J$.
+
+
+
+
+
+
+
