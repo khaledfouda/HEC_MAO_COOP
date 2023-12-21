@@ -399,12 +399,12 @@ minimize_M &amp;&amp; F(M) = \frac{1}{2} \|Y-M\|^2_F + \lambda ||M||_*
 \end{aligned}
 \]</span></p>
 <p>which as the following solution</p>
-$$
-<span class="math display">\[\begin{aligned}
+<p><span class="math display">\[
+\begin{aligned}
 \hat{M} = SVT_\lambda(Y) = U D_\lambda V&#39;&amp;&amp; with &amp;&amp;
 D_\lambda = diag[(d_1-\lambda)_+\cdots(d_r-\lambda)_+]
-\end{aligned}\]</span>
-<p>$$</p>
+\end{aligned}
+\]</span></p>
 </div>
 <div id="part-1-acceleration" class="section level2">
 <h2>Part 1: Acceleration</h2>
@@ -412,7 +412,7 @@ D_\lambda = diag[(d_1-\lambda)_+\cdots(d_r-\lambda)_+]
 <p><span class="math display">\[
 \begin{aligned}
 &amp;F(M) = f(M) + g(M) \\
-&amp;f(M) = \frac{1}{2} \|Y-M\|^2_F + \\
+&amp;f(M) = \frac{1}{2} \|Y-M\|^2_F \\
 &amp;g(M) = \lambda ||M||_*
 \end{aligned}
 \]</span> We want to minimize <span class="math inline">\(F(M)\)</span>.
@@ -435,11 +435,33 @@ M_{t+1} = prox_{\mu g}(Y_t) = arg min_M &amp;&amp; \frac{1}{2}
 \]</span></p>
 <p>and <span class="math inline">\(\mu \le 1/\rho\)</span> being a fixed
 step size and <span class="math inline">\(f\)</span> is <span class="math inline">\(\rho\)</span>-Lipshitz smooth(<span class="math inline">\(\|\Delta f(M_1)-\Delta f(M_2)\| \le \rho \| M_1 -
-M_2\|\)</span>).</p>
-<p>If we set <span class="math inline">\(\mu=1\)</span>, then <span class="math inline">\(prox_{g}(Y_t) = SVT_{\lambda}(Y_t)\)</span>.</p>
-<p>The accelrated algorithm has a slightly higher iteration complexity
-that the soft-impute. However, this is compensated by improving the
-convergence rate.</p>
+M_2\|\)</span>). However, since <span class="math inline">\(f(M)\)</span> is 1-Lipshitz smooth, we can set the
+step size to any value below or equal 1. Let’s set it up to 1. Note that
+when <span class="math inline">\(\mu=1\)</span>, then <span class="math inline">\(prox_{g}(Y_t) = SVT_{\lambda}(Y_t)\)</span>, which
+means that Soft-Impute is a type of proximal algorithms.</p>
+<p>Moreover, note that <span class="math inline">\(\Delta f(M) =
+M-Y\)</span></p>
+<p>The new update equations are then:</p>
+<p><span class="math display">\[
+\begin{aligned}
+(1)&amp;&amp;M_{t+1} &amp;= prox_{g}(Y_t) = SVT_\lambda(Y_t) = arg min_M
+\frac{1}{2} \|Y_t-M\|^2_F + \lambda ||M||_*,\\
+(2)&amp;&amp; \theta_{t+1} &amp;= \frac{t-1}{t+2},\\
+(3)&amp;&amp;Z_t &amp;= (1+\theta_t) M_t - \theta_t M_{t-1},\\
+(4)&amp;&amp; Y_t &amp;= P_\Omega(Y-Z_t) + Z_t \text{ (ie  }
+Y_t[\overline \Omega] = Z_t[\overline \Omega],Y_t[\Omega] = Y[\Omega]
+\text{ )}.
+\end{aligned}
+\]</span> Note that the difference between this and the Soft-Impute is
+in the extra steps of (2) and (3). In Soft-Impute, we set <span class="math inline">\(\theta_t=0 \; \; \forall t\)</span>. The
+accelerated algorithm has a slightly higher iteration complexity that
+the soft-impute. However, this is compensated by improving the
+convergence rate. The authors reported a convergence rate of <span class="math inline">\(O(1/T^2)\)</span> compared to a convergence rate
+of <span class="math inline">\(O(1/T)\)</span> for both soft-Impute and
+ALS-Impute.</p>
+<p>The methods still requires the computation of the SVT of a large
+matrix. Part 2 provides an approximation method for step (1) instead of
+computing the exact SVT.</p>
 </div>
 <div id="part-2-svt-approximation" class="section level2">
 <h2>Part 2: SVT Approximation</h2>
@@ -452,8 +474,8 @@ consists of two stages:</p>
 dimension and that <span class="math inline">\(Q\)</span> is the basis
 of A (has orthonormal columns and <span class="math inline">\(A \approx
 Q Q^TA\)</span>).</p></li>
-<li><p>The second stage Computes the SVD decomposition of $Q^TA ^{km} =
-[U,,V] $</p>
+<li><p>The second stage Computes the SVD decomposition of <span class="math inline">\(Q^TA \in \Re^{k\times m} = [\tilde
+U,\Sigma,V]\)</span></p>
 <ul>
 <li>set <span class="math inline">\(U \leftarrow Q \tilde
 U\)</span></li>
@@ -462,7 +484,9 @@ V^T\)</span></li>
 </ul></li>
 </ol>
 <p>The proposed algorithm for stage 1 (by Yao et al.) is as follows:</p>
-<p><strong>Algorithm 1: Approximation - Stange 1</strong> <span class="math inline">\(A\)</span>, <span class="math inline">\(R\)</span>, <span class="math inline">\(J\)</span></p>
+<hr />
+<p><strong>Algorithm 1: Approximation - Stage 1</strong></p>
+<hr />
 <p><strong>Require</strong>: <span class="math inline">\(A \in
 \mathbb{R}^{m \times n}\)</span>, <span class="math inline">\(R \in
 \mathbb{R}^{n \times k}\)</span>, and the number of iterations <span class="math inline">\(J\)</span>;</p>
@@ -473,13 +497,71 @@ factorization of <span class="math inline">\(AR\)</span>:</p>
 <p>where QR(.) denotes the QR factorization.</p></li>
 <li><p>For <span class="math inline">\(j = 1\)</span> to <span class="math inline">\(J\)</span> do:</p>
 <ol style="list-style-type: lower-alpha">
-<li>Update <span class="math inline">\(Q_j\)</span> with QR
+<li><p>Update <span class="math inline">\(Q_j\)</span> with QR
 factorization of <span class="math inline">\(A{A}^T
-Q_{j-1}\)</span>:</li>
-</ol>
+Q_{j-1}\)</span>:</p>
 <p><span class="math display">\[Q_j = QR(A{A}^T
 Q_{j-1})\]</span></p></li>
+</ol></li>
 <li><p>Return <span class="math inline">\(Q_J\)</span>.</p></li>
+</ol>
+<hr />
+<hr />
+<p><strong>Algorithm 2: Approximation - Stage 2</strong></p>
+<hr />
+<p><strong>Require</strong>: <span class="math inline">\({A} \in
+\mathbb{R}^{m \times n}\)</span>, <span class="math inline">\(R \in
+\mathbb{R}^{n \times k}\)</span>, and <span class="math inline">\(\lambda \geq 0\)</span>;</p>
+<ol style="list-style-type: decimal">
+<li><p>Compute <span class="math inline">\(Q\)</span> using the
+Algorithm 1:</p>
+<p><span class="math display">\[Q = \text{Algorithm1}(A, R,
+J);\]</span></p></li>
+<li><p>Perform SVT on <span class="math inline">\(Q^T A\)</span>:</p>
+<p><span class="math display">\[[\tilde U, \Sigma_\lambda, V] =
+\text{SVT}(Q^T A);\]</span></p></li>
+<li><p>Return the matrices <span class="math inline">\(Q\)</span>, <span class="math inline">\(U=Q\tilde U\)</span>, <span class="math inline">\(\Sigma_\lambda\)</span>, and <span class="math inline">\(V\)</span>. The approximated <span class="math inline">\(\hat{A}\)</span> is given by:</p>
+<p><span class="math display">\[\hat{A} = U\Sigma_\lambda
+V^T;\]</span></p></li>
+</ol>
+<hr />
+</div>
+<div id="putting-it-all-together" class="section level2">
+<h2>Putting it all together</h2>
+</div>
+<div id="accelerated-inexact-soft-impute-ais-impute-algorithm" class="section level2">
+<h2>Accelerated Inexact Soft-Impute (AIS-Impute) Algorithm</h2>
+<hr />
+<p><strong>Algorithm 3</strong> Accelerated Inexact Soft-Impute
+(AIS-Impute).</p>
+<hr />
+<p><strong>Require</strong>: partially observed matrix <span class="math inline">\(Y\)</span>, parameter <span class="math inline">\(\lambda\)</span>.</p>
+<ol style="list-style-type: decimal">
+<li>Initialize <span class="math inline">\(c = 1\)</span>, <span class="math inline">\(M_0 = M_1 = 0\)</span>, step-size , <span class="math inline">\(\hat{Y}=Y\)</span> <span class="math inline">\(\lambda &gt; \hat{\lambda}\)</span> and <span class="math inline">\(\nu \in (0, 1)\)</span>;</li>
+<li>For <span class="math inline">\(t = 1, 2, \ldots, T\)</span>
+do:</li>
+<li><span class="math inline">\(\quad \lambda_t = (\lambda -
+\hat{\lambda})\nu^{t-1} + \hat{\lambda}\)</span>;</li>
+<li><span class="math inline">\(\quad Z_t = M_t + \theta_t (M_t -
+M_{t-1})\)</span>, where <span class="math inline">\(\theta_t =
+\frac{c-1}{c+2}\)</span>;</li>
+<li><span class="math inline">\(\quad \hat{Y}[\overline\Omega] =
+Z_t[\overline\Omega]\)</span>;</li>
+<li><span class="math inline">\(\quad V_{t-1} = V_{t-1} - V_t (V_t^T
+V_{t-1})\)</span>, remove zero columns;</li>
+<li><span class="math inline">\(\quad R_t = QR([V_t,
+V_{t-1}])\)</span>;</li>
+<li><span class="math inline">\(\quad [U_{t+1}, \Sigma_{t+1}, V_{t+1}] =
+\text{approx-SVT}(\hat{Y}, R_t, \lambda_t, J)\)</span>;</li>
+<li><span class="math inline">\(\quad \text{// } M_{t+1} =
+U_{t+1}\Sigma_{t+1}V_{t+1}^T\)</span></li>
+<li><span class="math inline">\(\quad \text{if } F(M_{t+1}) &gt; F(M_t)
+\text{ then } c = 1\)</span>;</li>
+<li><span class="math inline">\(\quad \text{else } c = c + 1; \text{ end
+if}\)</span></li>
+<li><span class="math inline">\(\quad \text{end for}\)</span></li>
+<li>Return <span class="math inline">\(U_{T+1}, \Sigma_{T+1}\)</span>
+and <span class="math inline">\(V_{T+1}\)</span>.</li>
 </ol>
 </div>
 

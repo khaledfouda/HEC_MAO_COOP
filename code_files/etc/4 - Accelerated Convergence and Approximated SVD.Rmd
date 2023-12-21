@@ -61,8 +61,6 @@ $$
 \begin{aligned}
 \hat{M} = SVT_\lambda(Y) = U D_\lambda V'&& with && D_\lambda = diag[(d_1-\lambda)_+\cdots(d_r-\lambda)_+]
 \end{aligned}
-
-
 $$
 
 ## Part 1: Acceleration
@@ -73,7 +71,7 @@ Consider the partition of
 $$
 \begin{aligned}
 &F(M) = f(M) + g(M) \\
-&f(M) = \frac{1}{2} \|Y-M\|^2_F + \\
+&f(M) = \frac{1}{2} \|Y-M\|^2_F \\
 &g(M) = \lambda ||M||_*
 \end{aligned}
 $$
@@ -95,11 +93,23 @@ $$
 \end{aligned}
 $$
 
-and $\mu \le 1/\rho$ being a fixed step size and $f$ is $\rho$-Lipshitz smooth($\|\Delta f(M_1)-\Delta f(M_2)\| \le \rho \| M_1 - M_2\|$).
+and $\mu \le 1/\rho$ being a fixed step size and $f$ is $\rho$-Lipshitz smooth($\|\Delta f(M_1)-\Delta f(M_2)\| \le \rho \| M_1 - M_2\|$). However, since $f(M)$ is 1-Lipshitz smooth, we can set the step size to any value below or equal 1. Let's set it up to 1. Note that when $\mu=1$, then $prox_{g}(Y_t) = SVT_{\lambda}(Y_t)$, which means that Soft-Impute is a type of proximal algorithms.
 
-If we set $\mu=1$, then $prox_{g}(Y_t) = SVT_{\lambda}(Y_t)$.
+Moreover, note that $\Delta f(M) =  M-Y$
 
-The accelrated algorithm has a slightly higher iteration complexity that the soft-impute. However, this is compensated by improving the convergence rate.
+The new update equations are then:
+
+$$
+\begin{aligned}
+(1)&&M_{t+1} &= prox_{g}(Y_t) = SVT_\lambda(Y_t) = arg min_M \frac{1}{2} \|Y_t-M\|^2_F + \lambda ||M||_*,\\
+(2)&& \theta_{t+1} &= \frac{t-1}{t+2},\\
+(3)&&Z_t &= (1+\theta_t) M_t - \theta_t M_{t-1},\\
+(4)&& Y_t &= P_\Omega(Y-Z_t) + Z_t \text{ (ie  } Y_t[\overline \Omega] = Z_t[\overline \Omega],Y_t[\Omega] = Y[\Omega] \text{ )}.
+\end{aligned}
+$$
+Note that the difference between this and the Soft-Impute is in the extra steps of (2) and (3). In Soft-Impute, we set $\theta_t=0 \; \; \forall t$.  The accelerated algorithm has a slightly higher iteration complexity that the soft-impute. However, this is compensated by improving the convergence rate. The authors reported a convergence rate of $O(1/T^2)$ compared to a convergence rate of $O(1/T)$ for both soft-Impute and ALS-Impute. 
+
+The methods still requires the computation of the SVT of a large matrix. Part 2 provides an approximation method for step (1) instead of computing the exact SVT.
 
 
 ## Part 2: SVT Approximation
@@ -108,7 +118,7 @@ Reference 3 provide multiple methods to approximate the SVD or the QR decomposit
 
    1. the first stage is to compute a matrix $Q$ of dimensions $m \times k$ where k is a much lower dimension and that $Q$ is the basis of A (has orthonormal columns and $A \approx Q Q^TA$). 
    
-   2. The second stage  Computes the SVD decomposition of $Q^TA \in \Re^{k\times m} = [\tilde U,\Sigma,V] $
+   2. The second stage  Computes the SVD decomposition of $Q^TA \in \Re^{k\times m} = [\tilde U,\Sigma,V]$
       - set $U \leftarrow Q \tilde U$
       - $\hat{A} = U \Sigma_\lambda V^T$
       
@@ -120,28 +130,88 @@ title: "Algorithm in R Markdown"
 output: pdf_document
 ---
 
+*********************************************************************
 
-**Algorithm 1: Approximation -  Stange 1** $A$, $R$, $J$
+**Algorithm 1: Approximation -  Stage 1**
 
-**Require**: $A \in \mathbb{R}^{m \times n}$, $R \in \mathbb{R}^{n \times k}$, and the number of iterations $J$;
+*************************************************************************
 
-1. Initialize $Q_0$ with QR factorization of $AR$:
+   **Require**: $A \in \mathbb{R}^{m \times n}$, $R \in \mathbb{R}^{n \times k}$, and the number of iterations $J$;
+
+   1. Initialize $Q_0$ with QR factorization of $AR$:
    
-   $$Q_0 = QR(AR)$$
+      $$Q_0 = QR(AR)$$
    
-   where QR(.) denotes the QR factorization.
+      where QR(.) denotes the QR factorization.
 
-2. For $j = 1$ to $J$ do:
+   2. For $j = 1$ to $J$ do:
 
-   a. Update $Q_j$ with QR factorization of $A{A}^T Q_{j-1}$:
+      a. Update $Q_j$ with QR factorization of $A{A}^T Q_{j-1}$:
    
-   $$Q_j = QR(A{A}^T Q_{j-1})$$
+         $$Q_j = QR(A{A}^T Q_{j-1})$$
    
-3. Return $Q_J$.
+   3. Return $Q_J$.
+
+*******************************************************************************
 
 
 
+*********************************************************************
+
+**Algorithm 2: Approximation -  Stage 2**
+
+*************************************************************************
+
+   **Require**: ${A} \in \mathbb{R}^{m \times n}$, $R \in \mathbb{R}^{n \times k}$, and $\lambda \geq 0$;
+
+   1. Compute $Q$ using the Algorithm 1:
+      
+      $$Q = \text{Algorithm1}(A, R, J);$$
+   
+   2. Perform SVT on $Q^T A$:
+      
+      $$[\tilde U, \Sigma_\lambda, V] = \text{SVT}(Q^T A);$$
+   
+   3. Return the matrices $Q$, $U=Q\tilde U$, $\Sigma_\lambda$, and $V$. The approximated $\hat{A}$ is given by:
+      
+      $$\hat{A} = U\Sigma_\lambda V^T;$$
+      
+*************************************************************************************
 
 
 
+## Putting it all together
 
+## Accelerated Inexact Soft-Impute (AIS-Impute) Algorithm
+
+
+******************************************************************
+
+**Algorithm 3** Accelerated Inexact Soft-Impute (AIS-Impute).
+
+**********************************************************************
+
+**Require**: partially observed matrix $Y$, parameter $\lambda$.
+
+1. Initialize $c = 1$, $M_0 = M_1 = 0$, step-size , $\hat{Y}=Y$ $\lambda > \hat{\lambda}$ and $\nu \in (0, 1)$;
+2. For $t = 1, 2, \ldots, T$ do:
+3. $\quad \lambda_t = (\lambda - \hat{\lambda})\nu^{t-1} + \hat{\lambda}$;
+4. $\quad Z_t = M_t + \theta_t (M_t - M_{t-1})$, where $\theta_t = \frac{c-1}{c+2}$;
+5. $\quad \hat{Y}[\overline\Omega] = Z_t[\overline\Omega]$;
+6. $\quad V_{t-1} = V_{t-1} - V_t (V_t^T V_{t-1})$, remove zero columns;
+7. $\quad R_t = QR([V_t, V_{t-1}])$;
+8. $\quad [U_{t+1}, \Sigma_{t+1}, V_{t+1}] = \text{approx-SVT}(\hat{Y}, R_t, \lambda_t, J)$;
+9. $\quad \text{// } M_{t+1} = U_{t+1}\Sigma_{t+1}V_{t+1}^T$
+10. $\quad \text{if } F(M_{t+1}) > F(M_t) \text{ then } c = 1$;
+11. $\quad \text{else } c = c + 1; \text{ end if}$
+12. $\quad \text{end for}$
+13. Return $U_{T+1}, \Sigma_{T+1}$ and $V_{T+1}$.
+
+**************************************************************************
+
+## Original Implementation
+
+The method and simulations are fully implemented in Matlab and available on the author's github: https://github.com/quanmingyao/AIS-impute/tree/master
+
+
+---------------------------------------------------------------------------------------------------------
